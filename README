@@ -31,9 +31,7 @@
   Installation
   
    Nothing fancy here, folks.
-   Edit src/defaults.h if you want to change some of the compiled in
-   defaults.
-  ./configure
+   Edit config.h if you want to change some of the compiled in defaults.
   make
   make install    (as root)
 
@@ -202,9 +200,10 @@ K="#ffff00"
    
   Future
   
-     * Bugs?! You must be joking! ;-)
+     * Bugs?! You must be joking!
      * I'm experimenting with some GUI (GTK+) programming and maybe I'll
        make a image organizer with the capabilities of GFXIndex.
+     * Autoconf-ize. Please contribute.
      * Your sumbissions will be implemented if they are within my vision
        or if you're persuasive enough.
 

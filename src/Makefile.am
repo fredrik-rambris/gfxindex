@@ -1,10 +1,13 @@
+SUBDIRS = libtaglist libgfx
+
 bin_PROGRAMS = gfxindex
 
+INCLUDES = -I./libtaglist -I./libgfx
+
+gfxindex_LDADD = libtaglist/libtaglist.a libgfx/libgfx.a
+
 gfxindex_SOURCES = defaults.h \
-		   gfxindex.c 
-#		   gfx.h      \
-#		   gfx.c      \
-#		   gfxio.h    \
-#		   gfxio.c    \
-#		   io_jpeg.h  \
-#		   io_jpeg.c
+		   global.h   \
+		   gfxindex.c \
+		   args.h     \
+		   args.c

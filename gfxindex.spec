@@ -1,4 +1,4 @@
-%define ver      1.2
+%define ver      1.3
 %define rel      1
 %define prefix   /usr
 
@@ -10,7 +10,7 @@ Release: %{rel}
 License: GPL
 Packager: Fredrik Rambris <fredrik@rambris.com>
 Group: Applications/Multimedia
-Source: http://fredrik.rambris.com/gfxindex/gfxindex-%{PACKAGE_VERSION}.tar.gz
+Source: http://fredrik.rambris.com/files/gfxindex-%{PACKAGE_VERSION}.tar.gz
 BuildRoot: /tmp/gfxindex_root/
 URL: http://fredrik.rambris.com/gfxindex/
 Provides: gfxindex
@@ -30,7 +30,7 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT install
+make DESTDIR=$RPM_BUILD_ROOT install-strip
 
 %clean
 rm -rf $RPM_BUILD_ROOT

@@ -1,8 +1,87 @@
-Sat Jun 24 12:47  Fredrik Rambris <fredrik@rambris.com>
-* After getting nagged by Adam to release this version I made it ready for
-  release.
+Mon Jun 18 2001 02:00  Fredrik Rambris <fredrik@rambris.com>
+* Started adding stuff for the backport to Amiga. Um. Yes. I have decided that
+  since I started this project on my Amiga I may aswell make it work there
+  again. I encourage users to make it work under Win32.
 
-* 1.2 released
+Sat Jun 16 2001 23:52  Fredrik Rambris <fredrik@rambris.com>
+* Added a slightly better scaling routine made by my friend
+  Björn Östberg <jetracer@swipnet.se>. It reads the samples weighted (some
+  call it anti-aliased reading) which is more accurate. It is under
+  construction (Björn has made it in AMOS Basic (on Amiga) before with success
+  and is now implementing it in C) and will be improved to read and average
+  the whole area that gets scaled down. It is made in fixed point calculations
+  which gives a fairly accurate result and blazing speed.
+
+* While changing around from signed integer to unsigned to have more accuracy
+  in the new scaling routine I broke some stuff in my gfxlib and it took me
+  a while before I realized that and fixed it. It is fixed now anyhow.
+
+* Moved all files for gfxlib to a subdir
+
+* Added HTML padding with HSPACE and VSPACE when image padding is off.
+
+* Made code to remove the extensions from filenames in indexes. Will make it
+  configurable soon.
+
+Fri Jun 15 2001 08:02  Fredrik Rambris <fredrik@rambris.com>
+* Removed my email addy from the credits line. Got too many mails asking me
+  about the pictures in the page. Also the link to gfxindex homepage is opened
+  in a new window.
+
+* Altered all the ID= to CLASS= for the stylesheeting.
+
+Sun Jun 10 2001 23:27  Fredrik Rambris <fredrik@rambris.com>
+* While rearranging the source I messed up it a bit and it coredumped. It took
+  me a while to pin it down.
+
+* Learnt how to use gdb. Added a --enable-debug option to the configure script
+  which tells gcc to add debug symbols to the executable.
+
+* Altered the spec file to create RPMs with stripped, smaller executable.
+
+Sat Jun 09 2001 22:39  Fredrik Rambris <fredrik@rambris.com>
+* Added my libtaglist to the source tree (was harder than I thought but I
+  managed). libtaglist allows me to have optional arguments to the gfxlib,
+  like JPEG quality etc. which was the first thing I changed. So now JPEG
+  quality can be set again.
+
+* Rearranged a bit.
+
+* Read up on libjpeg and scale on the fly and I'm not convinced that it is
+  really done, the speed difference is not big between this and older
+  versions.
+
+* Made room for arbitary data (like comments, EXIF data etc in the image
+  structure in gfxlib.
+
+Mon Jun 04 2001 22:59  Fredrik Rambris <fredrik@rambris.com>
+  Made some profiling and found out that the longest time is spent when loading
+  the image (only JPEGs tested ofcause). libjpeg supports downscaling on the
+  fly (the file format allows that). Will try to use that as well as loading
+  several lines at the time.
+
+Mon Mar 28 2001 01:55  Fredrik Rambris <fredrik@rambris.com>
+  It's been QUITE a while since I typed in this file, meaning making some
+  changes to the sourcetree. The changelog doesn't say I released 1.2 which I
+  did. Since then I did the stuff below and it didn't work right away, I lost
+  interest and the project froze. Today I couldn't get myself to sleep (have to
+  get up tomorrow) because I've only been awake approx 10 hours. So I decided
+  to go through my Coding directory and see if there was something to do. I
+  poked a bit on some other things that didn't quite compile and my eyes fell on
+  this one. It sure compiled but didn't save any thumbnails. After hacking
+  around a bit inserting a bunch of printfs to see what went wrong (that's my
+  idea of debugging as I haven't figured out gdb yet) I saw that I had forgotten
+  to put a ! before a strcmp. After I did it saved jpegs. A bit out of shape but
+  still. Fixed the small glitches to make it kind of work and now I'm getting
+  where I wanted... sleepy =)
+
+So to the changes made so far:
+
+* X dependancy completly removed. This is done with a custommade
+  graphics.library (yes, I am and always will be an Amiga fanatic). This
+  results in lower speed (haven't nailed it down yet) and larger executable.
+  Some JPEG options probably don't work. It's been so long since I looked at
+  the sources.
 
 Sun Jun 11 23:60  Fredrik Rambris <fredrik@rambris.com>
 * Got a patch that fixed the warnings by Ondrejicka.

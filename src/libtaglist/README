@@ -1,0 +1,21 @@
+libTagList 0.1 by Fredrik Rambris <fredrik@rambris.com>
+http://fredrik.rambris.com/libtaglist/
+
+This is a bunch of functions to handle TagLists. A taglist is an array of
+Identifier- and Data-pairs like this:
+ATTR_COLOR, 34,
+ATTR_TITLE, (char *)"Test",
+TAG_DONE
+
+It is reverse engineered from AmigaOS. I've included the documentation from
+AmigaOS and snipped out the irrelevant. Take a peek at taglist.txt.
+
+I've not completed all functions. Two is still to do but I found them bad and
+not very useful for me to code them. They are PackStructureTags and
+UnpackStructureTags which use a packtable and stores/retrieves the values of a
+taglist in/from a structure.
+
+It not a real shared library. Just add it to your source tree and do what you
+want. I don't care what happens with this and will not be held responsible for
+anything happening. However. If you do use it, it would be cool if you told
+the users (manual, homepage or whatever) that you're using it.
