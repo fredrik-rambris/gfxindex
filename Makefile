@@ -1,13 +1,13 @@
-gfxindex : gfxindex.o
-	cc -o gfxindex gfxindex.o
-
-gfxindex.o : gfxindex.c
-	cc -c gfxindex.c 
+all: gfxindex
 
 install: gfxindex
 	install gfxindex /usr/bin
-	install makethumbs /usr/bin
-	install anytopnm /usr/bin
+
+uninstall:
+	rm -f /usr/bin/gfxindex
+
+gfxindex: gfxindex.c config.h
+	cc -o gfxindex gfxindex.c `imlib-config --libs-gdk --cflags-gdk` -lpopt
 
 clean:
-	rm -f *.o gfxindex
+	rm -f *.o *~ gfxindex core

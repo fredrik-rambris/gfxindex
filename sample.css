@@ -1,0 +1,7 @@
+BODY { font-family: sans-serif; }
+TD { font-family: sans-serif; font-size: small; }
+A {text-decoration: none; font-weight: bold; }
+#credits { font-size: small; }
+#navbar { background-color: #000040; }
+#current { text-decoration: underline; font-weight: bold; }
+#navbar A { color: #c0c0c0; }

@@ -1,0 +1,82 @@
+Mon May 06 23:33  Fredrik Rambris <fredrik@rambris.com>
+* Got back the doc proofread by Adam and incorperated the changes.
+  Time to do some uploading and announcing now...
+
+* 1.0 released
+
+Sun Apr 30 21:56  Fredrik Rambris <fredrik@rambris.com>
+* Finished documentation and sent it of to Adam for some proofreading.
+
+Mon Apr 24 22:04  Fredrik Rambris <fredrik.rambris@swipnet.se>
+* Prepared gfxindex for release.
+
+Tis Mar 28 03:24  Fredrik Rambris <fredrik.rambris@amiga.nu>
+* The commandline parsing got screwed up. It's now only parsed once so the
+  order of options have been changed:
+  /etc, ~/, commandline, .thumbnails/, .gfxindex
+* --nothumbs. Don't create any thumbnails
+* JPEG Quality now works
+* --nocredits Don't show credits
+
+
+Mon Mar 20 00:24  Fredrik Rambris <fredrik.rambris@amiga.nu>
+* After a bunch of mail from my betatester
+  Adam Sleight <adams@linearcorp.com> with tons of information and
+  information I've implemented a load of features.
+  - Filenames can be removed ( -t / --notitles )
+  - JPEG Quality selectable ( -Q / --quality )
+  - The navbarstrings ( [ Previous | 1 | 2 | Next ] ) can be changed.
+  - The path to a Cascading Stylesheet is now relative to the start-dir
+    (a sample CSS is supplied so you can see what's possible). Two IDs are
+    defined. navbar and credits.
+  - The defaults have changed. Thumbnails are now 128x128 and is not padded
+    by default. No fonts or colors are generated. Use bodyargs and/or CSS
+    for that.
+  - And the biggest of them all... config-files. All options can now be
+    entered into a file. It's loaded in the following order:
+    /etc/gfxindex, ~/.gfxindex, .thumbnails/gfxindex, .gfxindex
+    Each have presendance over the previous. Use like this
+    [longoption] = argument / true / false / yes / no
+    examples
+    BodyArgs = BGCOLOR="#888888"
+    Quality = 60
+    Title = My wedding
+    Everything after the first '=' with spaces trimmed of the edges is
+    considered argument.
+
+Sun Mar 19 02:28  Fredrik Rambris <fredrik.rambris@amiga.nu>
+
+* After hacking on this a couple of hours and not using old code I managed
+  to get something usable. The first version with the two tools makethumbs
+  and gfxindex integrated with recursing and all =). With imlib this gets
+  very much quicker than the old one and you only have to issue a single
+  command.
+
+Sat Feb 19 19:46  Fredrik Rambris <fredrik.rambris@amiga.nu>
+
+* Started from scratch yesterday. Now using popt for argument parsing, glib
+  for portability and later on imlib and gdk for thumbnail processing. Fully
+  self-contained! popt and directory reading is almost finished now. This is
+  the development branch of 1.0. This will however mean that we utilize X so
+  I think I'll have to make a GUI for it too.
+
+Thu Feb 10 20:18  Fredrik Rambris <fredrik.rambris@amiga.nu>
+
+* 0.4 released
+
+* Marco Pratesi <pratesi@nausicaa.eln.uniroma2.it> reported to me that
+  gfxindex coredumped when he used custom strings for next, space etc due
+  to a too small buffer.
+
+* I noticed a misspelling the lead to 'Too many open files'. It said
+  close instead of fclose.
+
+* Changed the license to be true Open Source
+
+Thu Jan 06 18:25  Hans-Peter Bock <bocki@dwarf.wh.uni-stuttgart.de>
+
+* I had problems with gfxindex and 60 pictures I wanted to make a
+  gallery with.gfxindex always wrote hyperlinks to an indexfile which
+  it didnt create, when i set xstop to 5 and ystop to 3 (60/(5*3)=4).
+  (It made hyperlinks for index.html to index4.html but actually only
+  created index.html to index3.html.)
