@@ -1,6 +1,6 @@
-/* args.h - Prototypes for argument handling
+/* io_png.h - Definitions and prototypes for PNG-I/O
  *
- * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -22,17 +22,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARGS_H
-#define ARGS_H
+#ifndef IO_PNG_H
+#define IO_PNG_H
 
-/* Prototypes */
-gint args_init( int argc, char **argv );
-char *stripws( char *str );
-void readconf( gchar *filename, struct Global *cfg );
-gint handleargs( int argc, char **argv, struct Global *cfg );
-void free_empties( struct Global *cfg );
-void freeconf( struct Global *cfg );
-struct Global *dupconf( struct Global *cfg );
-void setglobaldefaults( void );
+#ifdef HAVE_CONFIG_H
+ #ifndef PACKAGE
+  #include <config.h>
+ #endif
+#endif
 
-#endif /* ARGS_H */
+#ifdef HAVE_LIBPNG
+
+#include "gfxio.h"
+
+struct imageio *png_init( void );
+
+#define GFXIO_PNG		(GFXIO+200)
+
+#endif
+
+#endif /* IO_PNG_H */

@@ -1,9 +1,7 @@
-INCLUDES = -I../libtaglist
+INCLUDES = -I../libtaglist -I../
 
 noinst_LIBRARIES = libgfx.a
 
-libgfx_a_LIBADD = ../libtaglist/libtaglist.a
+libgfx_a_SOURCES = gfx.c gfx.h gfxio.c gfxio.h io_jpeg.c io_jpeg.h gfx_scale_fine.h gd_rescale.h exif.c exif.h io_png.c io_png.h
 
-libgfx_a_SOURCES = gfx.c gfx.h gfxio.c gfxio.h io_jpeg.c io_jpeg.h
-
-EXTRA_DIST = amigaglib.c amigaglib.c.info amigaglib.h amigaglib.h.info gfx.c.info gfx.h.info gfx.¶ gfx.¶.info
+EXTRA_DIST = amigaglib.c amigaglib.c.info amigaglib.h 

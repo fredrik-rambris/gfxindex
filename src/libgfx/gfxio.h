@@ -1,6 +1,6 @@
 /* gfxio.h - Definitions and functions for the I/O part of gfx library
  *
- * GFXIndex (c) 1999-2001 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -28,35 +28,40 @@
 #include <stdio.h>
 #include <taglist.h>
 #include "gfx.h"
+#include "exif.h"
 
-#define GFXIO		(GFX+1000)
+#define GFXIO		(GFX+0x1000)
 
 struct imageio
 {
+	Node node;
 	/* Function used to identify a file and if this library can handle it */
-	gboolean (*io_identify) ( FILE *file );
+	BOOL (*io_identify) ( FILE *file );
 	/* Function to load image, allocate an image struct and point img to it */
-	gint (*io_load) ( FILE *file, struct image *img, struct TagItem *tags );
+	int (*io_load) ( FILE *file, struct image *img, struct TagItem *tags );
 	/* Saves the image pointed to in img */
-	gint (*io_save) ( FILE *file, struct image *img, struct TagItem *tags );
+	int (*io_save) ( FILE *file, struct image *img, struct TagItem *tags );
+	/* Fills the image struct with info about the file but doesn't load the actual pixeldata*/
+	int (*io_getinfo) ( FILE *file, struct image *img, struct TagItem *tags );
 	/* Frees any allocated stuff. Also the imageio-struct if it was manually allocated */
 	void (*io_cleanup) ( void );
 	/* Information (read only) about the library */
-	gchar *io_info;
+	char *io_info;
 	/* Default extension to filenames */
-	gchar *io_extension;
+	char *io_extension;
 	/* Identification (used when selecting format in UIs etc ) */
-	gchar *io_id;
+	char *io_id;
 };
 
-extern GList *ios;
+extern List *ios;
 
-gint gfxio_init( void );
+int gfxio_init( void );
 void gfxio_cleanup( void );
 void img_clean( struct image *img );
 void printioinfo( void );
-struct imageio *identify_file( FILE *file, gchar *filename, gint *error );
-struct image *gfx_load( gchar *filename, gint *error, Tag tags );
-gint gfx_save( gchar *filename, struct image *image, Tag tags, ... );
+struct imageio *identify_file( FILE *file, char *filename, int *error );
+struct image *gfx_load( char *filename, int *error, Tag tags, ... );
+int gfx_save( char *filename, struct image *image, Tag tags, ... );
+int gfx_getinfo( char *filename, struct image *image, Tag tags, ... );
 #endif /* GFXIO_H */
 

@@ -1,19 +1,22 @@
-%define ver      1.3
+%define name     gfxindex
+%define ver      2.0pre1
 %define rel      1
 %define prefix   /usr
 
 
 Summary: GFXIndex - Web thumbnails generator
-Name: gfxindex
+Name: %{name}
 Version: %{ver}
 Release: %{rel}
 License: GPL
 Packager: Fredrik Rambris <fredrik@rambris.com>
 Group: Applications/Multimedia
-Source: http://fredrik.rambris.com/files/gfxindex-%{PACKAGE_VERSION}.tar.gz
-BuildRoot: /tmp/gfxindex_root/
-URL: http://fredrik.rambris.com/gfxindex/
+Source: http://fredrik.rambris.com/files/%{name}-%{PACKAGE_VERSION}.tar.bz2
+BuildRoot: /var/tmp/%{name}-build-root
+URL: http://fredrik.rambris.com/%{name}/
 Provides: gfxindex
+Requires: glib popt
+BuildRequires: glib-devel popt
 
 %description
 GFXIndex helps you organize your pictures by creating thumbnails and indexing

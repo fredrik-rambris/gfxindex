@@ -3,30 +3,57 @@
  <HEAD>
   <TITLE>GFXindex documentaion</TITLE>
   <STYLE><!--
-   BODY { font-family: sans-serif }
-   TD { font-family: sans-serif }
+   BODY, TD { font-family: Trebuchet MS,Verdana,Tahoma,Arial,Helvetica,sans-serif; }
+   BODY { background-color: #f0f0f0; margin: 0px }
    H3 { text-decoration: underline }
-   A { font-weight: bold }
+   A { font-weight: bold; color: #000088 }
+   A:link { text-decoration: none }
+   A:hover { text-decoration: underline }
    PRE { font-family: courier; }
-   PRE.code { color: #008800 }
+   CODE, .code { background: #c0c0c0; color: #000000 }
    SPAN.name { color: #008800; font-weight: bold }
    SPAN.value { color: #000088; font-weight: bold; font-style: italic }
    SPAN.comment { color: #880000; font-style: italic }
    SPAN.type { color: #0088ff; font-weight: bold }
+   SPAN.logo { font-size: 18pt; font-weight: bold; font-family: Trebuchet MS }
   --></STYLE>
  </HEAD>
- <BODY BGCOLOR="#ffffff" TEXT="#000000" LINK="#0000a0" VLINK="#0000a0" ALINK="#a00000">
-  <FONT SIZE="+2"><B>GFXindex</B></FONT> - Thumbnailer and indexer<BR>
+ <BODY>
+  <TABLE BORDER="0" CELLPADDING="8" CELLSPACING="0" WIDTH="100%"><TR><TD BGCOLOR="#000000">&nbsp;</TD><TD VALIGN="top" WIDTH="600">
+  <SPAN CLASS="logo">GFXindex</SPAN> - Thumbnailer and indexer<BR>
   <HR NOSHADE SIZE="1">
   <P></P>
   <H3>General Information</H3>
 
   GFXIndex is a tool to manage your picture collection by creating thumbnails (small representation of the original picture) and HTML-indexes.
   <P></P>
-  The thumbnails are by default put in the directory.thumbnails and the indices in the same directory as the images.
+  The human brain can very quickly find a photo by looking at a collage made up miniatures a photo collection. This is why this type of software is very popular in these days when digital photography is in the grasp of many families. When the photo collection builds up one needs to have a way of organizing it. Also this &quot;gallery&quot;-format of thumbnails is a popular way of publishing images on the web as you quickly download the thumbnails and then select the image you want to see the full image.
   <P></P>
-  There is also an indexer made in PHP for use directly on the web.
+  Since GFXindex first release a lot of other gallery indexers have been released and they all have their unique advantages. Some are online based software with database backend and upload capabilities, others are, like GFXindex, offline based where you prepare your indexes and then upload them. Ofcause if you have shell-access to your site you could ofcause run it on the server, still, by default GFXindex generates static HTML galleries.
+  <p></P>
+  The process of creating an album is usually done by changing to the directory where you have your images and running <CODE>gfxindex</CODE>. This generates the thumbnails, puts them into the directory <I>thumbnails</I> <SMALL>(can be configured)</SMALL> and writes the indexes into the current working directory. Thus creating a directory structure like:<PRE>
+.
+|-- index.html       <I>First page. next one is called index2.html and so on</I>
+|-- p5180354.jpg     <I>Original image, untouched (2048x1536)</I>
+|-- p5180359.jpg
+|-- p5180363.jpg
+|-- p5180367.jpg
+`-- thumbnails
+    |-- gfxindex.xml         <I>Cache file, just written for now, can be used by PHP et al</I>
+    |-- p5180354.jpg         <I>Thumbnail (128x96)</I>
+    |-- p5180354.jpg.html    <I>Page with original image, this is where you</I>
+    |-- p5180359.jpg         <I>get when you click a thumbnail</I>
+    |-- p5180359.jpg.html
+    |-- p5180363.jpg
+    |-- p5180363.jpg.html
+    |-- p5180367.jpg
+    `-- p5180367.jpg.html
+</PRE>
   <P></P>
+  <!-- There is also an indexer made in PHP for use directly on the web. -->
+  In previous versions there used to be an indexer made in PHP, but since the format of the cache file has changed I haven't updated it to handle this so until it is updated you will have to stick with static HTML or help me write one.
+  <P></P>
+  <H3>Status</H3>
   The official web site is:<BR>
   <A HREF="http://fredrik.rambris.com/gfxindex/">http://fredrik.rambris.com/gfxindex/</A>
   <P></P>
@@ -34,11 +61,15 @@
   <P></P>
   <H3>Requirements</H3>
   <UL>
-   <LI><A HREF="ftp://ftp.gtk.org">glib v1.2.x and gdk</A>
    <LI><A HREF="ftp://ftp.redhat.com">popt</A>
-   <LI><A HREF="ftp://ftp.enlightenment.org">imlib</A>
+   <LI><A HREF="http://jpeg">jpeglib</A> (optional but gfxindex is useless w/o it)
+   <LI><A HREF="http://png">libpng</A> (optional)
+   <LI><A HREF="http://exif.sourceforge.net">libexif</A> (optional)
+   <LI><A HREF="http://expat">expat</A> (optional, used for reading album files)
   </UL>
-  And their requirements. Unfortunately this means that you have to have X running.
+  Previous version relied on an X server to be running. This is no longer the case.
+  <P></P>
+  The supplied pre-compiled Windows version has all these built in.
   <P></P>
   <H3>Installation</H3>
   Nothing fancy here, folks.<BR>
@@ -86,7 +117,7 @@
    <DT><SPAN CLASS="name">QUIET</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Print progress information or not</DD>
    <P></P>
-   <DT><SPAN CLASS="name">DIR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)<directory 
+   <DT><SPAN CLASS="name">DIR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT> 
    <DD>Directory to start with</DD>
    <P></P>
    <DT><SPAN CLASS="name">MAKETHUMBS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
@@ -216,5 +247,6 @@
    <P></P>
    <LI>Your sumbissions will be implemented if they are within my vision or if you're persuasive enough.
   </UL>
+  </TD><TD BGCOLOR="#000000">&nbsp;</TD></TR></TABLE>
  </BODY>
 </HTML>

@@ -1,4 +1,5 @@
+AUTOMAKE_OPTIONS = dist-bzip2 dist-zip
+
 SUBDIRS = src
 
-EXTRA_DIST = docs/README.html docs/bevel.png docs/pad.jpg docs/thumbs.gif \
-		gfxindex.spec gfxindex.spec.in extras/sample.css extras/gfxindex.php3
+EXTRA_DIST = gfxindex.spec docs extras winbuild gfxindex.exe sources.txt

@@ -1,0 +1,121 @@
+Anvisningar för GFXindex under Windows
+
+Installera genom att köra installationsprogrammet
+
+
+För att lägga till GFXindex i PATH
+
+Högerklicka på "Den här datorn" och välj Egenskaper i snabbmenyn
+Under fliken Avancerat klickar du på Miljövariabler.
+I listan med systemvariabler finns en variabel som heter Path eller PATH. Redigera den.
+Lägg till
+;C:\Program\GFXindex
+(med semikolon) i sluten av Variabelvärde och klicka på Ok 3 ggr
+
+
+För att använda det öppnar du ett kommandofönster
+Start->Kör    cmd   ok
+Växla sedan till den katalog du har bilderna i
+t.ex.
+
+C:
+cd "\Mina dokument\mina bilder"
+
+För att få en lista på alla argument till gfxindex kör du
+
+gfxindex --help
+
+Så kommer följande upp
+
+Usage: gfxindex [OPTION...]
+  -d, --dir=STRING              Starting directory
+  -O, --outdir=STRING           Output base directory
+  --thumbdir=STRING             The directory where the thumbnails will be put
+  -q, --quiet                   Suspend all output to the console
+  --noquiet
+  -v, --verbose=INT             Verbosity level (0-2). 0=quiet, 2=chatty.
+  -t, --title=STRING            The title of the album
+  -o, --overwrite               Overwrite thumbnails, etc.
+  --nooverwrite
+  --remakethumbs                Force creation of thumbnails
+  --noremakethumbs
+  --remakebigs                  Force creation of bigs
+  --noremakebigs
+  -r, --recursive               Dive into subdirectories
+  --norecursive
+  -T, --nothumbs                Create thumbnails
+  --thumbs
+  -p, --pad                     Pad thumbnails for equal size
+  --nopad
+  -w, --thumbwidth=INT          Width of thumbnails
+  -h, --thumbheight=INT         Height of thumbnails
+  -W, --widths=STRING           Scale original to these widths. (comma
+                                separated)
+  --defwidth=INT                Which width should be considered default
+  --copy                        Copy original image to outdir when it's defined
+  --nocopy
+  -Q, --quality=INT             JPEG quality (0-100) of thumbnails when saving
+  -c, --thumbbgcolor=STRING     Background color of thumbnails
+  -b, --thumbbevel              Create beveled thumbnails
+  --nothumbbevel
+  -g, --bevelbg=STRING          Background color in beveled state
+  -l, --bevelbright=STRING      Color of bright edges in bevel
+  -m, --beveldark=STRING        Color of dark edges in bevel
+  -f, --scale=INT               Method of rescaling
+  -i, --noindexes               Create HTML indexes
+  --indexes
+  -C, --credits                 Show credits in generated pages
+  --nocredits
+  --notitles                    Show filenames
+  --titles
+  --noextensions                Show extensions
+  --extensions
+  -n, --numlink                 Use numeric links to individual pages
+  --nonumlink
+  -u, --navthumbs=INT           Use thumbnails for Prev and Next (set scale in
+                                percent)
+  -x, --numx=INT                Number of thumbnails per row
+  -y, --numy=INT                Number of rows per page
+  -a, --bodyargs=STRING         Statements inserted into the BODY tag
+  -e, --cellargs=STRING         Statements inserted into the TD tag
+  -s, --css=STRING              Relative path to Cascading StyleSheets
+  --parentdoc=STRING            Document linkt to on Parent links
+  --left=STRING                 String used for the navbar
+  --space=STRING                String used for the navbar
+  --divider=STRING              String used for the navbar
+  --right=STRING                String used for the navbar
+  --prev=STRING                 String used for the navbar
+  --next=STRING                 String used for the navbar
+  --index=STRING                String used for the navbar
+  --parent=STRING               String used for the navbar
+  --usetitles                   Use titles instead of 'Prev' or 'Next'
+  --nousetitles
+
+Help options:
+  -?, --help                    Show this help message
+  --usage                       Display brief usage message
+
+
+
+
+
+Ett par exempel
+
+gfxindex --title="Bilder på moln" -OC:\Hemsida\moln --noextensions -W1024,800 --defwidth=800 -sstyle.css
+
+Detta ändrar inget i katalogen med bilderna utan allting hamnar i C:\Hemsida\moln.
+--title är titeln på sidan
+-O är vilket katalog det ska hamna i
+--noextensions är att den ska skala av filtypen från filnamnen
+-W är en lista på storlekar den ska skala bilderna till
+--defwidth är den storlek som är standard och blir den som länkas till när man klickar på tumnaglarna
+-s anger filnamnet på en CSS fil. Denna fil får du skapa själv. Lägg den i samma katalog som du angivit i -O
+
+Vill du ha svenska kan du byta ut strängarna mot egna med --next, --prev osv
+T.ex.
+--prev="F&ouml;rra" --next="N&auml;sta"
+
+
+
+
+Experimentera!

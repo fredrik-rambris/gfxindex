@@ -1,0 +1,108 @@
+;NSIS Modern User Interface version 1.63
+;Basic Example Script
+;Written by Joost Verburg
+;and ofcause tweaked by Fredrik Rambris
+
+!define MUI_PRODUCT "GFXindex" ;Define your own software name here
+!define MUI_VERSION "@VERSION@" ;Define your own software version here
+
+!include "MUI.nsh"
+
+;--------------------------------
+;Configuration
+
+  ;General
+  OutFile "gfxindex-${MUI_VERSION}.exe"
+
+  ;Folder selection page
+  InstallDir "$PROGRAMFILES\${MUI_PRODUCT}"
+  
+  ;Remember install folder
+  InstallDirRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "InstallLocation"
+
+;--------------------------------
+;Modern UI Configuration
+
+  !define MUI_LICENSEPAGE
+;  !define MUI_COMPONENTSPAGE
+  !define MUI_DIRECTORYPAGE
+  
+  !define MUI_ABORTWARNING
+  
+  !define MUI_UNINSTALLER
+  !define MUI_UNCONFIRMPAGE
+  
+;--------------------------------
+;Languages
+ 
+  !insertmacro MUI_LANGUAGE "English"
+  
+;--------------------------------
+;Language Strings
+
+  ;Description
+  LangString DESC_SecCopyUI ${LANG_ENGLISH} "Copy the gfxindex.exe file to the application folder."
+
+;--------------------------------
+;Data
+  
+  LicenseData "COPYING.txt"
+
+;--------------------------------
+;Installer Sections
+
+Section "gfxindex.exe" SecCopyUI
+
+  ;ADD YOUR OWN STUFF HERE!
+
+  SetOutPath "$INSTDIR"
+  File "gfxindex.exe"
+  File /r "docs"
+  File "COPYING"
+
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "DisplayName" "GFXindex"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "UninstallString" "$INSTDIR\Uninstall.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "DisplayIcon" "$INSTDIR\gfxindex.exe,0"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "Publisher" "Fredrik Rambris"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "URLInfoAbout" "http://fredrik.rambris.com/gfxindex/"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "DisplayVersion" "${MUI_VERSION}"
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "NoRepair" 1
+
+  ;Create uninstaller
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
+
+SectionEnd
+
+;Display the Finish header
+;Insert this macro after the sections if you are not using a finish page
+!insertmacro MUI_SECTIONS_FINISHHEADER
+
+;--------------------------------
+;Descriptions
+
+!insertmacro MUI_FUNCTIONS_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecCopyUI} $(DESC_SecCopyUI)
+!insertmacro MUI_FUNCTIONS_DESCRIPTION_END
+ 
+;--------------------------------
+;Uninstaller Section
+
+Section "Uninstall"
+
+  ;ADD YOUR OWN STUFF HERE!
+
+  Delete "$INSTDIR\gfxindex.exe"
+  Delete "$INSTDIR\Uninstall.exe"
+  Delete "$INSTDIR\COPYING"
+  RMDir /r "$INSTDIR\docs"
+
+  RMDir "$INSTDIR"
+
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}"
+
+  ;Display the Finish header
+  !insertmacro MUI_UNFINISHHEADER
+
+SectionEnd

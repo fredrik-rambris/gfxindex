@@ -1,6 +1,6 @@
 /* gfx.h - Definitions and prototypes for gfx library
  *
- * GFXIndex (c) 1999-2001 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -25,13 +25,17 @@
 #ifndef GFX_H
 #define GFX_H
 
+#include <stdio.h>
+
 #ifndef __AMIGA__
-#include <glib.h>
+#include "util.h"
 #include <taglist.h>
 #else
 #include "amigaglib.h"
 #include <clib/utility_protos.h>
 #endif
+
+#include "util.h"
 
 /* Errors codes */
 #define ERR_OK 0 /* Everything is fine */
@@ -50,42 +54,51 @@
 extern char *gfx_errors[12];
 
 /* Tag base */
-#define GFX	(TAG_USER+10000)
-#define TAG_CONTAINS_POINTER 0x10000
+#define GFX	(TAG_USER+0x10000)
+
+typedef struct _Pixel
+{
+	unsigned char r, g, b, a;
+} Pixel;
 
 struct image
 {
-	guchar *im_pixels; /* 3 bytes per pixel (RGB) */
-	guchar *im_alpha; /* 1 byte per pixel. 0=transparent, 255=opaque */
-	gint im_width;
-	gint im_height;
+	Pixel *im_pixels; /* 4 bytes per pixel (RGBA) */
+//	unsigned char *im_alpha; /* 1 byte per pixel. 0=transparent, 255=opaque */
+	int im_width;
+	int im_height;
 };
 
 struct color
 {
-	/* Set one of theese to negative to be ignored */
-	guint r;
-	guint g;
-	guint b;
-	guint opacity;
+	unsigned int r;
+	unsigned int g;
+	unsigned int b;
+	unsigned int opacity;
 };
 
 enum
 {
 	SCALE_NEAREST=1,
-	SCALE_FINE
+	SCALE_SLOW
 };
 
 /* Prototypes */
-struct image *gfx_allocimage( gint width, gint height, gboolean alpha, gint *err );
-void gfx_freeimage( struct image *img, gboolean only_pixels );
-gint gfx_parsecolor( struct color *col, gchar *colstr );
-gboolean gfx_withinbounds( struct image *img, gint x, gint y );
-void gfx_writepixel( struct image *img, gint x, gint y, struct color *col );
-struct color *gfx_readpixel( struct image *img, gint x, gint y, struct color *col );
-void gfx_rectfill( struct image *img, gint x1, gint y1, gint x2, gint y2, struct color *col );
-void gfx_draw( struct image *img, gint x1, gint y1, gint x2, gint y2, struct color *col );
-void gfx_scale_nearest( struct image *src_img, gint src_x, gint src_y, gint src_width, gint src_height, struct image *dst_img, gint dst_x, gint dst_y, gint dst_width, gint dst_height );
-void gfx_scaleimage( struct image *src_img, gint src_x, gint src_y, gint src_width, gint src_height, struct image *dst_img, gint dst_x, gint dst_y, gint dst_width, gint dst_height, gint scale_type );
+struct image *gfx_allocimage( int width, int height, int *err );
+void gfx_freeimage( struct image *img, BOOL only_pixels );
+int gfx_parsecolor( struct color *col, char *colstr );
+BOOL gfx_withinbounds( struct image *img, int x, int y );
+void gfx_writepixel( struct image *img, int x, int y, struct color *col );
+struct color *gfx_readpixel( struct image *img, int x, int y, struct color *col );
+void gfx_rectfill( struct image *img, int x1, int y1, int x2, int y2, struct color *col );
+void gfx_draw( struct image *img, int x1, int y1, int x2, int y2, struct color *col );
+void gfx_scale_nearest( struct image *src_img, int src_x, int src_y, int src_width, int src_height, struct image *dst_img, int dst_x, int dst_y, int dst_width, int dst_height, BOOL apply_alpha );
+void gfx_scaleimage( struct image *src_img, int src_x, int src_y, int src_width, int src_height, struct image *dst_img, int dst_x, int dst_y, int dst_width, int dst_height, int scale_type, BOOL apply_alpha );
+void gfx_scale_fine( struct image *src_img, int src_x, int src_y, int src_width, int src_height, struct image *dst_img, int dst_x, int dst_y, int dst_width, int dst_height );
+void gfx_rotate( struct image *img, int degrees );
+void gfx_mixpixel( struct image *img, int x, int y, struct color *col );
+void gfx_mix( struct image *brush, struct image *img, int offx, int offy );
+void gfx_stack( struct image *brush, struct image *img );
+void gfx_fixalpha( struct image *brush, struct image *img );
 #endif /* GFX_H */
 

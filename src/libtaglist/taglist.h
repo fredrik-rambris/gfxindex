@@ -2,7 +2,6 @@
 #define TAGLIST_H
 
 #include <stdio.h>
-
 /* This is a reverse engineered port of the TagList concept found in AmigaOS
  * release 2 and later. As I haven't invented it I don't hold any copyrights.
  * Port by Fredrik Rambris <fredrik@rambris.com>.
@@ -18,7 +17,9 @@
  */
 
 typedef unsigned long ULONG;
-typedef char BOOL;
+#ifndef GFX_TYPES_H
+typedef int BOOL;
+#endif
 typedef ULONG Tag;
 
 #ifndef TRUE

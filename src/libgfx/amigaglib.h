@@ -1,6 +1,6 @@
 /* amigaglib.h - Glib definitions and prototypes for Amiga
  *
- * GFXIndex (c) 1999-2001 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -34,13 +34,12 @@ typedef LONG gint;
 typedef LONG glong;
 typedef ULONG guint;
 typedef BOOL gboolean;
-typedef float gfloat;
 #define gpointer void *
 
 #define g_new(type,num) (type *)AllocVec(num,FALSE)
 #define g_new0(type,num) (type *)AllocMem(num,TRUE)
 #define g_free(ptr) FreeVec(ptr)
 
-void g_strdown( gchar *string );
+void gfx_strdown( char *string );
 
 #endif /* AMIGAGLIB_H */

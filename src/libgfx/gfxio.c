@@ -1,6 +1,6 @@
 /* gfxio.c - Functions for loading and saving image data
  *
- * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -25,67 +25,78 @@
 #include "gfxio.h"
 #include "gfx.h"
 #include "io_jpeg.h"
+#include "io_png.h"
 #include <string.h>
 
-GList *ios=NULL;
+List *ios=NULL;
 
-gint gfxio_init( void )
+int gfxio_init( void )
 {
+	ios=list_new();
 #ifdef HAVE_LIBJPEG
-	ios=g_list_append( ios, (gpointer)jpeg_init() );
+	list_append( ios, (Node *)jpeg_init() );
+#endif
+#ifdef HAVE_LIBPNG
+	list_append( ios, (Node *)png_init() );
 #endif
 	return( ERR_OK );
 }
 
 void gfxio_cleanup( void )
 {
-	GList *node=ios;
+	Node *node, *next;
 	struct imageio *iio;
 	/* Empty IOS and tell I/O-libraries to clean up */
-	while( node )
+	if( !ios ) return;
+	if( ios->head )
 	{
-		iio=(struct imageio *)node->data;
-		if( iio->io_cleanup ) iio->io_cleanup();
-		node->data=ios=NULL;
-		node=g_list_next( node );
+		node=(Node *)ios->head;
+		while( node )
+		{
+			next=node->next;
+			iio=(struct imageio *)node;
+			if( iio->io_cleanup ) iio->io_cleanup();
+			node=next;
+		}
 	}
-	g_list_free( ios );
+	list_free( ios, TRUE );
 	ios=NULL;
 }
 
 void img_clean( struct image *img )
 {
-	if( img->im_pixels ) g_free( img->im_pixels );
+	if( img->im_pixels ) free( img->im_pixels );
 	img->im_pixels=NULL;
-	if( img->im_alpha ) g_free( img->im_alpha );
-	img->im_alpha=NULL;
+//	if( img->im_alpha ) free( img->im_alpha );
+//	img->im_alpha=NULL;
 }
 
-void fe_printioinfo( gpointer data, gpointer user_data )
+void fe_printioinfo( Node *node )
 {
-	printf( "%s\n", ((struct imageio *)data)->io_info );
+	printf( "%s (%s)\n", ((struct imageio *)node)->io_info, ((struct imageio *)node)->io_extension );
 }
 
 void printioinfo( void )
 {
 	printf( "I/O modules:\n" );
 	if( !ios ) printf( "No modules\n" );
-	g_list_foreach( ios, fe_printioinfo, NULL );
+	list_foreach( ios, fe_printioinfo );
 }
 
-struct imageio *identify_file( FILE *file, gchar *filename, gint *error )
+struct imageio *identify_file( FILE *file, char *filename, int *error )
 {
-	GList *node=ios;
+	Node *node;
 	struct imageio *io=NULL;
-	if( !ios )
+	if( !ios || !ios->head )
 	{
 		if( error ) *error=ERR_UNKNOWNFORMAT;
 		return( NULL );
 	}
 	/* Guess what format the file might be of */
+	node=(Node *)ios->head;
 	while( node )
 	{
-		io=(struct imageio *)node->data;
+		io=(struct imageio *)node;
 
 		/* If we can we try to identify it by it's contents */
 		if( io->io_identify && file )
@@ -97,21 +108,21 @@ struct imageio *identify_file( FILE *file, gchar *filename, gint *error )
 		{
 			if( filename )
 			{
-				if( !g_strcasecmp( filename+strlen( filename )-strlen( io->io_extension ), io->io_extension ) ) break;
+				if( fastcasecompare( filename+strlen( filename )-strlen( io->io_extension ), io->io_extension ) ) break;
 			}
 		}
 		io=NULL;
-		node=g_list_next( node );
+		node=node->next;
 	}
 	return( io );
 }
 
-struct image *gfx_load( gchar *filename, gint *error, Tag tags )
+struct image *gfx_load( char *filename, int *error, Tag tags, ... )
 {
 	FILE *fp=NULL;
 	struct image *image=NULL;
 	struct imageio *io=NULL;
-	gint err;
+	int err;
 
 	if( !ios )
 	{
@@ -136,7 +147,7 @@ struct image *gfx_load( gchar *filename, gint *error, Tag tags )
 			if( error ) *error=ERR_LOADNOTPOSSIBLE;
 			return( NULL );
 		}
-		if( !( image=g_new0( struct image, 1 ) ) )
+		if( !( image=gfx_new0( struct image, 1 ) ) )
 		{
 			fclose( fp );
 			if( error ) *error=ERR_MEM;
@@ -145,7 +156,7 @@ struct image *gfx_load( gchar *filename, gint *error, Tag tags )
 		err=io->io_load( fp, image, (struct TagItem *)&tags );
 		if( err )
 		{
-			g_free( image );
+			free( image );
 			fclose( fp );
 			if( error ) *error=err;
 			return( FALSE );
@@ -160,11 +171,11 @@ struct image *gfx_load( gchar *filename, gint *error, Tag tags )
 	return( image );
 }
 
-gint gfx_save( gchar *filename, struct image *image, Tag tags, ... )
+int gfx_save( char *filename, struct image *image, Tag tags, ... )
 {
 	FILE *fp=NULL;
 	struct imageio *io=NULL;
-	gint err;
+	int err;
 
 	if( !filename ) return( ERR_NOFILE );
 	if( !image ) return( ERR_UNKNOWN );
@@ -185,3 +196,51 @@ gint gfx_save( gchar *filename, struct image *image, Tag tags, ... )
 	}
 	return( ERR_UNKNOWN ); /* This should never be reached */
 }
+
+int gfx_getinfo( char *filename, struct image *image, Tag tags, ... )
+{
+	FILE *fp=NULL;
+	struct imageio *io=NULL;
+	int err=ERR_OK;
+
+	if( !ios )
+	{
+		return( ERR_UNKNOWNFORMAT );
+	}
+
+	if( !( fp=fopen( filename, "rb" ) ) )
+	{
+		return( ERR_FILE );
+	}
+
+	io=identify_file( fp, filename, &err );
+
+	/* We have a possitive ID on the file */
+	if( io )
+	{
+		if( !io->io_load )
+		{
+			fclose( fp );
+			return( ERR_LOADNOTPOSSIBLE );
+		}
+		if( !io->io_getinfo )
+		{
+			fclose( fp );
+			return ERR_LOADNOTPOSSIBLE;
+		}
+		err=io->io_getinfo( fp, image, (struct TagItem *)&tags );
+		if( err )
+		{
+			fclose( fp );
+			return( err );
+		}
+	}
+	else
+	{
+		err=ERR_UNKNOWNFORMAT;
+	}
+	
+	fclose( fp );
+	return( err );
+}
+

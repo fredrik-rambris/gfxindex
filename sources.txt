@@ -1,0 +1,12 @@
+src/gfxindex.c
+src/thumbdata.c
+src/libtaglist/taglist.c
+src/libgfx/gfx.c
+src/libgfx/gfxio.c
+src/libgfx/io_jpeg.c
+src/libgfx/io_png.c
+src/util.c
+src/confargs.c
+src/preferences.c
+src/xml.c
+src/exif.c

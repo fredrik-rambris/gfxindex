@@ -7,6 +7,8 @@
  #endif
 #endif
 
+#include "gfx_types.h"
+
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,64 +19,44 @@
 #include <stdio.h>
 #include <string.h>
 #include <popt.h>
-#include <glib.h>
 
 #include "gfx.h"
-#include "defaults.h"
+#include "preferences.h"
+#include <taglist.h>
 
+
+/*
 struct ThumbData
 {
-	gchar *image;
+	char *image;
 	guint imagewidth, imageheight;
-	gchar *thumb;
+	char *thumb;
 	guint thumbwidth, thumbheight;
-	gchar *extra;
+	char *extra;
 };
+*/
 
-struct Global
-{
-	guint ThumbWidth, ThumbHeight;
-	gchar *bgcolor, *bevelbright, *beveldark, *bevelback;
-	gboolean bevel, recursive, overwrite, pad, quiet;
-	gchar *dir;
-	gchar *thumbdir;
-	gboolean genindex, titles, numlink, showcredits, makethumbs, hideext;
-	gchar *title;
-	gint thumbscale;
-	gint xstop, ystop;
-	gchar *bodyargs;
-	gchar *cellargs;
-	gchar *css;
-	gchar *left, *space, *divider, *right, *previous, *next, *index, *parent, *parentdoc;
-	gint quality;
-};
+#ifndef TRUE
+#define TRUE (1)
+#endif
 
-extern struct Global *global;
+#ifndef FALSE
+#define FALSE (0)
+#endif
 
-struct ProcessInfo
-{
-	struct color col[3];
-	gboolean up;
-};
+#ifndef MAX
+#define MAX(a,b) ((a>b)?a:b)
+#endif
 
-void cleanup( void );
-void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct Global *cfg );
-void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level );
-gchar *indexstr( int number );
-gchar *setstr( gchar *old, gchar *new );
-void error( gchar *msg );
-void navbar_new( GString *str );
-void navbar_add( struct Global *local, GString *str, gchar *newstr, ... );
-void navbar_end( struct Global *local, GString *str );
-gboolean checkext( gchar *file );
-gint dircomp( const struct dirent **a, const struct dirent **b );
-gint thumbcomp( gpointer a, gpointer b );
-void savethumblist( GList *thumbs, gchar *file );
-GList *loadthumblist( GList *thumbs, gchar *file );
-void freenode( gpointer data, gpointer user_data );
-gboolean fastcompare( gchar *a, gchar *b );
-GList *removenode( GList *thumbs, gchar *imagename );
-struct ThumbData *findnode( GList *thumbs, gchar *imagename );
-gboolean file_exist( gchar *filename );
+#ifndef MIN
+#define MIN(a,b) ((a<b)?a:b)
+#endif
+
+#ifdef __WIN32__
+	#define PATH_DELIMITER '\\'
+	#include "win32.h"
+#else
+	#define PATH_DELIMITER '/'
+#endif
 
 #endif /* GLOBAL_H */

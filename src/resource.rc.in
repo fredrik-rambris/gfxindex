@@ -1,0 +1,23 @@
+AppIcon ICON "../extras/gfxindex.ico"
+1 VERSIONINFO
+FILEVERSION 2, 0, 0, 0
+PRODUCTVERSION 2, 0, 0, 0
+FILEFLAGSMASK 0
+FILEOS 0x40000
+FILETYPE 1
+{
+ BLOCK "StringFileInfo"
+ {
+  BLOCK "040904E4"
+  {
+   VALUE "CompanyName", "Fredrik Rambris <fredrik@rambris.com>"
+   VALUE "FileDescription", "Web album creator"
+   VALUE "FileVersion", "@VERSION@"
+   VALUE "InternalName", "gfxindex"
+   VALUE "LegalCopyright", "GNU General Public License"
+   VALUE "OriginalFilename", "gfxindex.exe"
+   VALUE "ProductName", "GFXIndex"
+   VALUE "ProductVersion", "@VERSION@"
+  }
+ }
+}

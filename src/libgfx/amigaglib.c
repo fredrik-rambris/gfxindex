@@ -1,6 +1,6 @@
 /* amigaglib.c - Portability functions to make glib stuff work on Amiga
  *
- * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images.
@@ -25,7 +25,7 @@
 #include "amigaglib.h"
 #include <clib/utility_protos.h>
 
-void g_strdown( gchar *string )
+void gfx_strdown( char *string )
 {
 	while( string[0]!='\0' )
 	{
