@@ -1,5 +1,5 @@
 %define name     gfxindex
-%define ver      2.0pre2
+%define ver      2.0pre3
 %define rel      1
 %define prefix   /usr
 

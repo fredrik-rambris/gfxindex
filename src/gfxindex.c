@@ -1,5 +1,5 @@
 /* gfxindex.c - Main sceleton
- * GFXindex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXindex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXindex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -308,6 +308,7 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 	struct Picture **pict;
 	if( !imagefile || !destdir || !cfg ) return 1;
 	if( !CONF(cfg,PREFS_WIDTHS) ) return 1;
+	if( !BCONF(cfg,PREFS_FLAT ) ) return 1;
 	size=(int *)CONF(cfg,PREFS_WIDTHS);
 	num=arrlen( size );
 	if( pn->pn_pictures )
@@ -447,17 +448,32 @@ int makethumbnail( char *imagefile, char *destdir, ConfArg *cfg, struct color *c
 	{
 		return( 1 );
 	}
-	strcpy( thumbfile, destdir );
-	tackon( thumbfile, SCONF(cfg,PREFS_THUMBDIR ) );
-	path=thumbfile+strlen(thumbfile)-strlen(SCONF(cfg,PREFS_THUMBDIR));
-	tackon( thumbfile, (char *)basename( imagefile ) );
-
-	/* Replace the extension with jpg */
-	if( ( str=strrchr( thumbfile, '.' ) ) )
+	if( !BCONF(cfg,PREFS_FLAT ) )
 	{
-		str[1]='\0';
-		strcat( thumbfile, "jpg" );
+		strcpy( thumbfile, destdir );
+		tackon( thumbfile, SCONF(cfg,PREFS_THUMBDIR ) );
+		path=thumbfile+strlen(thumbfile)-strlen(SCONF(cfg,PREFS_THUMBDIR));
+		tackon( thumbfile, (char *)basename( imagefile ) );
+
+		/* Replace the extension with jpg */
+		if( ( str=strrchr( thumbfile, '.' ) ) )
+		{
+			str[1]='\0';
+			strcat( thumbfile, "jpg" );
+		}
 	}
+	else
+	{
+		strcpy( thumbfile, destdir );
+		path=thumbfile+strlen(thumbfile);
+		tackon( thumbfile, (char *)basename( imagefile ) );
+		if( ( str=strrchr( thumbfile, '.' ) ) )
+		{
+			str[0]='\0';
+			strcat( thumbfile, "_tn.jpg" );
+		}
+	}
+
 //	confargs_show( cfg );
 	if( BCONF(cfg,PREFS_OVERWRITE) || !file_exist( thumbfile ) || BCONF(cfg,PREFS_REMAKETHUMBS) )
 	{
@@ -593,7 +609,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 	struct dirent *de;
 	struct stat buf;
 	char *thumbdir=NULL;
-	char *path, *file=NULL, *outpath=NULL, *outfile=NULL;
+	char *path, *file=NULL, *outpath=NULL, *outfile=NULL, *str=NULL;
 	const char pwd[]="./";
 	struct image image={NULL, 0, 0};
 	List thumbdata, *album;
@@ -612,6 +628,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 		".thumbnails",
 		"thumbnails",
 		SCONF(cfg,PREFS_THUMBDIR), /* This array should be created after the config has been read in */
+		"Thumbs.db",
 		NULL
 	};
 
@@ -649,7 +666,6 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 	if( !( path=gfx_new( char, strlen( dir )+1024 ) ) )
 	{
 		confargs_free( cfg );
-		
 		return 0;
 	}
 	strcpy( path, dir );
@@ -666,7 +682,6 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 			if( mkdir( SCONF(cfg,PREFS_OUTDIR), 0755 ) )
 #endif
 			{
-
 				free( path );
 				return 0;
 			}
@@ -696,18 +711,21 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 			file[0]='\0';
 			strcpy( thumbdir, outpath );
 			tackon( thumbdir, SCONF(cfg,PREFS_THUMBDIR) );
-			if( !file_exist( thumbdir ) )
+			if( !BCONF(cfg,PREFS_FLAT ) )
 			{
-#ifdef __WIN32__
-				if( mkdir( thumbdir ) )
-#else
-				if( mkdir( thumbdir, 0755 ) )
-#endif
+				if( !file_exist( thumbdir ) )
 				{
-					free( thumbdir );
-					closedir( dirhandle );
-					free( path );
-					return 0;
+#ifdef __WIN32__
+					if( mkdir( thumbdir ) )
+#else
+					if( mkdir( thumbdir, 0755 ) )
+#endif
+					{
+						free( thumbdir );
+						closedir( dirhandle );
+						free( path );
+						return 0;
+					}
 				}
 			}
 
@@ -735,10 +753,10 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 							{
 								strncpy( outfile, de->d_name, 1023 );
 							}
-							status( 2, cfg, "Entering directory '%s'", file );
-							duseful=traverse( file, level+1, cfg, &subdirthumb );
+							status( 2, cfg, "Entering directory '%s'", path );
+							duseful=traverse( path, level+1, cfg, &subdirthumb );
 							useful+=duseful;
-							status( 2, cfg, "Leaving directory %s (%d)", file, duseful );
+							status( 2, cfg, "Leaving directory %s (%d)", path, duseful );
 							if( duseful )
 							{
 
@@ -769,6 +787,19 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 					}
 					else if( S_ISREG(buf.st_mode ) ) 
 					{
+						if( ( str=strrchr( path, '.' ) ) )
+						{
+							str-=3;
+							if( str>path )
+							{
+								if( !strncmp( str, "_tn", 3 ) )
+								{
+									status( 2, cfg, "Skipping '%s'", path );
+									continue;
+								}
+							}
+						}
+
 						apn=get_picturenode( album, path );
 						if( apn && apn->pn_skip )
 						{
@@ -877,21 +908,24 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 //			print_thumbdata( &thumbdata );
 
 			if( BCONF(cfg,PREFS_INDEXES) ) gfxindex( cfg, outpath, &thumbdata, level );
-			if( STR_ISSET(SCONF(cfg,PREFS_OUTDIR)) )
+			if( !BCONF(cfg,PREFS_FLAT ) )
 			{
-				strcpy( outfile, SCONF(cfg,PREFS_THUMBDIR) );
-				tackon( outfile, "gfxindex.xml" );
-				status( 2, cfg, "Writing cache to '%s'", outpath );
-				writeThumbData( cfg, &thumbdata, outpath );
-				outfile[0]='\0';
-			}
-			else
-			{
-				strcpy( file, SCONF(cfg,PREFS_THUMBDIR) );
-				tackon( file, "gfxindex.xml" );
-				status( 2, cfg, "Writing cache to '%s'", path );
-				writeThumbData( cfg, &thumbdata, path );
-				file[0]='\0';
+				if( STR_ISSET(SCONF(cfg,PREFS_OUTDIR)) )
+				{
+					strcpy( outfile, SCONF(cfg,PREFS_THUMBDIR) );
+					tackon( outfile, "gfxindex.xml" );
+					status( 2, cfg, "Writing cache to '%s'", outpath );
+					writeThumbData( cfg, &thumbdata, outpath );
+					outfile[0]='\0';
+				}
+				else
+				{
+					strcpy( file, SCONF(cfg,PREFS_THUMBDIR) );
+					tackon( file, "gfxindex.xml" );
+					status( 2, cfg, "Writing cache to '%s'", path );
+					writeThumbData( cfg, &thumbdata, path );
+					file[0]='\0';
+				}
 			}
 			if( BCONF(cfg,PREFS_WRITEALBUM) )
 			{
@@ -945,7 +979,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 	Node *node;
 	char space[32]="";
 	char **css=NULL, **indexheader=NULL, **indexfooter=NULL, **pictureheader=NULL, **picturefooter=NULL;
-	int css_numrows=0, indexheader_numrows=0, indexfooter_numrows=0, pictureheader_numrows=0, picturefooter_numrows=0;
+	unsigned int css_numrows=0, indexheader_numrows=0, indexfooter_numrows=0, pictureheader_numrows=0, picturefooter_numrows=0;
 	int hspace, vspace;
 	if( (float)numpics/(float)ppp > numpages ) numpages++;
 
@@ -1045,136 +1079,149 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			}
 			if( pict && pict->p_path )
 			{
-
-				strcpy( path, dir ); /* Start with the output dir */
-				tackon( path, SCONF(local,PREFS_THUMBDIR) ); /* Add the thumbnail dir */
-				tackon( path, (char *)basename( pict->p_path ) ); /* Add the name of the picture */
-				strcat( path, ".html" ); /* And stick a .html after it */
-				status( 3, local, "[1] Opening '%s'", path );
-				if( !( thumbfile=fopen( path, "w" ) ) ) goto error;
-				sprintf( path, "..%c%s", PATH_DELIMITER, indexstr( page ) );
-				if( STR_ISSET(SCONF(local,PREFS_PICTURETITLE)) )
-					tprintf( tmpbuf, SCONF(local,PREFS_PICTURETITLE), pn, pict, local, page+1, numpages );
-				else
-					sprintf( tmpbuf, "%s%s%s ( %d x %d )", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", (pn->pn_title?pn->pn_title:pn->pn_original.p_path), pict->p_width, pict->p_height );
-				myfprintf( thumbfile, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
-				if( STR_ISSET(SCONF(local,PREFS_CSS)) )
+				if( !BCONF(local,PREFS_FLAT ) )
 				{
-					myfprintf( thumbfile, "  <LINK REL=\"stylesheet\" HREF=\"" );
-					for( count=0 ; count<=level ; count++ ) fprintf( thumbfile, "..%c", PATH_DELIMITER );
-					myfprintf( thumbfile, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
-				}
-				if( css )
-				{
-					myfprintf( thumbfile, "  <STYLE><!--\n" );
-					for( count=0; count<css_numrows; count++ )
+					strcpy( path, dir ); /* Start with the output dir */
+					tackon( path, SCONF(local,PREFS_THUMBDIR) ); /* Add the thumbnail dir */
+					tackon( path, (char *)basename( pict->p_path ) ); /* Add the name of the picture */
+					strcat( path, ".html" ); /* And stick a .html after it */
+					status( 3, local, "[1] Opening '%s'", path );
+					if( !( thumbfile=fopen( path, "w" ) ) ) goto error;
+					sprintf( path, "..%c%s", PATH_DELIMITER, indexstr( page ) );
+					if( BCONF(local,PREFS_FULLDOC) )
 					{
-						myfprintf( thumbfile, "   %s\n", css[count] );
-					}
-					myfprintf( thumbfile, "  --></STYLE>\n" );
-				}
-				myfprintf( thumbfile, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
-
-				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"header\">\n" );
-				if( pictureheader )
-				{
-					for( count=0; count<pictureheader_numrows; count++ )
-					{
-						tprintf( tmpbuf, pictureheader[count], pn, pict, local, page+1, numpages );
-						myfprintf( thumbfile, "   %s\n", tmpbuf );
-					}
-				}
-				if( STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) )
-				{
-					tprintf( tmpbuf, SCONF(local,PREFS_PICTUREHEADER), pn, pict, local, page+1, numpages );
-					myfprintf( thumbfile, "   %s\n", tmpbuf );
-				}
-				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  </DIV>\n" );
-
-				myfprintf( thumbfile, "  <DIV CLASS=\"picture\" ALIGN=\"center\">\n" );
-
-				if( numpics>1 ) navbar_new( thumbindex );
-				if( node->prev && !(((struct PictureNode *)(node->prev))->pn_dir) && ( STR_ISSET(SCONF(local,PREFS_PREV)) || ICONF(local,PREFS_NAVTHUMBS) || BCONF(local,PREFS_USETITLES) ) )
-				{
-					tmpstr=(bpict==-1?(char *)basename( ((struct PictureNode *)(node->prev))->pn_original.p_path ):(char *)basename( ((struct PictureNode *)(node->prev))->pn_pictures[bpict]->p_path ));
+						if( STR_ISSET(SCONF(local,PREFS_PICTURETITLE)) )
+							tprintf( tmpbuf, SCONF(local,PREFS_PICTURETITLE), pn, pict, local, page+1, numpages );
+						else
+							sprintf( tmpbuf, "%s%s%s ( %d x %d )", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", (pn->pn_title?pn->pn_title:pn->pn_original.p_path), pict->p_width, pict->p_height );
+						myfprintf( thumbfile, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
+						if( STR_ISSET(SCONF(local,PREFS_CSS)) )
+						{
+							myfprintf( thumbfile, "  <LINK REL=\"stylesheet\" HREF=\"" );
+							for( count=0 ; count<=level ; count++ ) fprintf( thumbfile, "..%c", PATH_DELIMITER );
+							myfprintf( thumbfile, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
+						}
+						if( css )
+						{
+							myfprintf( thumbfile, "  <STYLE><!--\n" );
+							for( count=0; count<css_numrows; count++ )
+							{
+								myfprintf( thumbfile, "   %s\n", css[count] );
+							}
+							myfprintf( thumbfile, "  --></STYLE>\n" );
+						}
+						myfprintf( thumbfile, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
 	
-					if( ICONF(local,PREFS_NAVTHUMBS) )
-					{
-						navstr=BCONF(local,PREFS_USETITLES)?((struct PictureNode *)(node->prev))->pn_title:(STR_ISSET(SCONF(local,PREFS_PREV))?SCONF(local,PREFS_PREV):"");
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" TITLE=\"%s\" BORDER=\"0\"></A>", tmpstr, basename(((struct PictureNode *)(node->prev))->pn_thumbnail.p_path), (long)(((struct PictureNode *)(node->prev))->pn_thumbnail.p_width*ICONF(local,PREFS_NAVTHUMBS)/100), (long)(((struct PictureNode *)(node->prev))->pn_thumbnail.p_height*ICONF(local,PREFS_NAVTHUMBS)/100), navstr, navstr );
+						if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"header\">\n" );
 					}
-					else if( BCONF(local,PREFS_USETITLES ) )
-					{
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, ((struct PictureNode *)(node->prev))->pn_title );
-					}
-					else
-					{
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, SCONF(local,PREFS_PREV) );
-					}
-				}
-				if( SCONF(local,PREFS_INDEX) ) navbar_add( local, thumbindex, "<A HREF=\"%s\">%s</A>", path, SCONF(local,PREFS_INDEX) );
-
-				if( node->next && !(((struct PictureNode *)(node->next))->pn_dir) && ( STR_ISSET(SCONF(local,PREFS_NEXT)) || ICONF(local,PREFS_NAVTHUMBS) || BCONF(local,PREFS_USETITLES ) ) )
-				{
-					tmpstr=(bpict==-1?(char *)basename( ((struct PictureNode *)(node->next))->pn_original.p_path ):(char *)basename( ((struct PictureNode *)(node->next))->pn_pictures[bpict]->p_path ));	
-					navstr=BCONF(local,PREFS_USETITLES)?((struct PictureNode *)(node->next))->pn_title:(STR_ISSET(SCONF(local,PREFS_NEXT))?SCONF(local,PREFS_NEXT):"");
-					if( ICONF(local,PREFS_NAVTHUMBS) )
-					{
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" TITLE=\"%s\" BORDER=\"0\"></A>", tmpstr, basename(((struct PictureNode *)(node->next))->pn_thumbnail.p_path), (long)(((struct PictureNode *)(node->next))->pn_thumbnail.p_width*ICONF(local,PREFS_NAVTHUMBS)/100), (long)(((struct PictureNode *)(node->next))->pn_thumbnail.p_height*ICONF(local,PREFS_NAVTHUMBS)/100), navstr, navstr );
-					}
-					else if( BCONF(local,PREFS_USETITLES ) )
-					{
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, ((struct PictureNode *)(node->next))->pn_title );
-					}
-					else
-					{
-						navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, SCONF(local,PREFS_NEXT) );
-					}
-				}
-
-
-				if( numpics>1 ) navbar_end( local, thumbindex );
-				if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", thumbindex );
-//				myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, (STR_ISSET(SCONF(local,PREFS_OUTDIR))&&bpict>=0?pict->p_path+strlen(SCONF(local,PREFS_OUTDIR)):pict->p_path), pict->p_width, pict->p_height, pn->pn_title );
-				myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
-				if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(pn->pn_caption) ) myfprintf( thumbfile, "   <BR><SPAN CLASS=\"caption\">%s</SPAN><BR>\n", pn->pn_caption );
-#if HAVE_LIBEXIF
-				if( pn->pn_exifinfo && BCONF(local,PREFS_EXIF) )
-				{
-					ExifInfo *ei=pn->pn_exifinfo;
-					myfprintf( thumbfile, "   <TABLE CLASS=\"exif\">\n" );
-					if( STR_ISSET( ei->ei_date ) ) myfprintf( thumbfile, "    <TR><TH>Taken</TH><TD>%s</TD></TR>\n", ei->ei_date );
-					if( STR_ISSET( ei->ei_make ) ) myfprintf( thumbfile, "    <TR><TH>Make</TH><TD>%s</TD></TR>\n", ei->ei_make );
-					if( STR_ISSET( ei->ei_model ) ) myfprintf( thumbfile, "    <TR><TH>Model</TH><TD>%s</TD></TR>\n", ei->ei_model );
-					if( STR_ISSET( ei->ei_exposure ) ) myfprintf( thumbfile, "    <TR><TH>Exposure time</TH><TD>%s</TD></TR>\n", ei->ei_exposure );
-					if( STR_ISSET( ei->ei_aperture ) ) myfprintf( thumbfile, "    <TR><TH>Aperture</TH><TD>%s</TD></TR>\n", ei->ei_aperture );
-					if( STR_ISSET( ei->ei_focal ) ) myfprintf( thumbfile, "    <TR><TH>Focal length</TH><TD>%s</TD></TR>\n", ei->ei_focal );
-					myfprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
-					myfprintf( thumbfile, "   </TABLE>\n" );
-				}
-#endif
-				if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN>\n", thumbindex );
 				
-				myfprintf( thumbfile, "  </DIV>\n\n" );
-				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"footer\">\n" );
-				if( picturefooter )
-				{
-					for( count=0; count<picturefooter_numrows; count++ )
+					if( pictureheader )
 					{
-						tprintf( tmpbuf, picturefooter[count], pn, pict, local, page+1, numpages );
+						for( count=0; count<pictureheader_numrows; count++ )
+						{
+							tprintf( tmpbuf, pictureheader[count], pn, pict, local, page+1, numpages );
+							myfprintf( thumbfile, "   %s\n", tmpbuf );
+						}
+					}
+					if( STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) )
+					{
+						tprintf( tmpbuf, SCONF(local,PREFS_PICTUREHEADER), pn, pict, local, page+1, numpages );
 						myfprintf( thumbfile, "   %s\n", tmpbuf );
 					}
-				}
-				if( STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) )
-				{
-					tprintf( tmpbuf, SCONF(local,PREFS_PICTUREFOOTER), pn, pict, local, page+1, numpages );
-					myfprintf( thumbfile, "   %s\n", tmpbuf );
-				}
-				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  </DIV>\n" );
+					if( BCONF(local,PREFS_FULLDOC) )
+					{
+						if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  </DIV>\n" );
+					}
+					myfprintf( thumbfile, "  <DIV CLASS=\"picture\" ALIGN=\"center\">\n" );
 
-				myfprintf( thumbfile, " </BODY>\n</HTML>\n" );
-				fclose( thumbfile );
-				thumbfile=NULL;
+					if( numpics>1 ) navbar_new( thumbindex );
+					if( node->prev && !(((struct PictureNode *)(node->prev))->pn_dir) && ( STR_ISSET(SCONF(local,PREFS_PREV)) || ICONF(local,PREFS_NAVTHUMBS) || BCONF(local,PREFS_USETITLES) ) )
+					{
+						tmpstr=(bpict==-1?(char *)basename( ((struct PictureNode *)(node->prev))->pn_original.p_path ):(char *)basename( ((struct PictureNode *)(node->prev))->pn_pictures[bpict]->p_path ));
+		
+						if( ICONF(local,PREFS_NAVTHUMBS) )
+						{
+							navstr=BCONF(local,PREFS_USETITLES)?((struct PictureNode *)(node->prev))->pn_title:(STR_ISSET(SCONF(local,PREFS_PREV))?SCONF(local,PREFS_PREV):"");
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" TITLE=\"%s\" BORDER=\"0\"></A>", tmpstr, basename(((struct PictureNode *)(node->prev))->pn_thumbnail.p_path), (long)(((struct PictureNode *)(node->prev))->pn_thumbnail.p_width*ICONF(local,PREFS_NAVTHUMBS)/100), (long)(((struct PictureNode *)(node->prev))->pn_thumbnail.p_height*ICONF(local,PREFS_NAVTHUMBS)/100), navstr, navstr );
+						}
+						else if( BCONF(local,PREFS_USETITLES ) )
+						{
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, ((struct PictureNode *)(node->prev))->pn_title );
+						}
+						else
+						{
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, SCONF(local,PREFS_PREV) );
+						}
+					}
+					if( SCONF(local,PREFS_INDEX) ) navbar_add( local, thumbindex, "<A HREF=\"%s\">%s</A>", path, SCONF(local,PREFS_INDEX) );
+	
+					if( node->next && !(((struct PictureNode *)(node->next))->pn_dir) && ( STR_ISSET(SCONF(local,PREFS_NEXT)) || ICONF(local,PREFS_NAVTHUMBS) || BCONF(local,PREFS_USETITLES ) ) )
+					{
+						tmpstr=(bpict==-1?(char *)basename( ((struct PictureNode *)(node->next))->pn_original.p_path ):(char *)basename( ((struct PictureNode *)(node->next))->pn_pictures[bpict]->p_path ));	
+						navstr=BCONF(local,PREFS_USETITLES)?((struct PictureNode *)(node->next))->pn_title:(STR_ISSET(SCONF(local,PREFS_NEXT))?SCONF(local,PREFS_NEXT):"");
+						if( ICONF(local,PREFS_NAVTHUMBS) )
+						{
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" TITLE=\"%s\" BORDER=\"0\"></A>", tmpstr, basename(((struct PictureNode *)(node->next))->pn_thumbnail.p_path), (long)(((struct PictureNode *)(node->next))->pn_thumbnail.p_width*ICONF(local,PREFS_NAVTHUMBS)/100), (long)(((struct PictureNode *)(node->next))->pn_thumbnail.p_height*ICONF(local,PREFS_NAVTHUMBS)/100), navstr, navstr );
+						}
+						else if( BCONF(local,PREFS_USETITLES ) )
+						{
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, ((struct PictureNode *)(node->next))->pn_title );
+						}
+						else
+						{
+							navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, SCONF(local,PREFS_NEXT) );
+						}
+					}
+
+
+					if( numpics>1 ) navbar_end( local, thumbindex );
+					if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", thumbindex );
+//					myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, (STR_ISSET(SCONF(local,PREFS_OUTDIR))&&bpict>=0?pict->p_path+strlen(SCONF(local,PREFS_OUTDIR)):pict->p_path), pict->p_width, pict->p_height, pn->pn_title );
+					myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
+					if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(pn->pn_caption) ) myfprintf( thumbfile, "   <BR><SPAN CLASS=\"caption\">%s</SPAN><BR>\n", pn->pn_caption );
+#if HAVE_LIBEXIF
+					if( pn->pn_exifinfo && BCONF(local,PREFS_EXIF) )
+					{
+						ExifInfo *ei=pn->pn_exifinfo;
+						myfprintf( thumbfile, "   <TABLE CLASS=\"exif\">\n" );
+						if( STR_ISSET( ei->ei_date ) ) myfprintf( thumbfile, "    <TR><TH>Taken</TH><TD>%s</TD></TR>\n", ei->ei_date );
+						if( STR_ISSET( ei->ei_make ) ) myfprintf( thumbfile, "    <TR><TH>Make</TH><TD>%s</TD></TR>\n", ei->ei_make );
+						if( STR_ISSET( ei->ei_model ) ) myfprintf( thumbfile, "    <TR><TH>Model</TH><TD>%s</TD></TR>\n", ei->ei_model );
+						if( STR_ISSET( ei->ei_exposure ) ) myfprintf( thumbfile, "    <TR><TH>Exposure time</TH><TD>%s</TD></TR>\n", ei->ei_exposure );
+						if( STR_ISSET( ei->ei_aperture ) ) myfprintf( thumbfile, "    <TR><TH>Aperture</TH><TD>%s</TD></TR>\n", ei->ei_aperture );
+						if( STR_ISSET( ei->ei_focal ) ) myfprintf( thumbfile, "    <TR><TH>Focal length</TH><TD>%s</TD></TR>\n", ei->ei_focal );
+						myfprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
+						myfprintf( thumbfile, "   </TABLE>\n" );
+					}
+#endif
+					if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN>\n", thumbindex );
+				
+					myfprintf( thumbfile, "  </DIV>\n\n" );
+					if( BCONF(local,PREFS_FULLDOC) )
+					{
+						if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"footer\">\n" );
+					}
+					if( picturefooter )
+					{
+						for( count=0; count<picturefooter_numrows; count++ )
+						{
+							tprintf( tmpbuf, picturefooter[count], pn, pict, local, page+1, numpages );
+							myfprintf( thumbfile, "   %s\n", tmpbuf );
+						}
+					}
+					if( STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) )
+					{
+						tprintf( tmpbuf, SCONF(local,PREFS_PICTUREFOOTER), pn, pict, local, page+1, numpages );
+						myfprintf( thumbfile, "   %s\n", tmpbuf );
+					}
+					if( BCONF(local,PREFS_FULLDOC) )
+					{
+						if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  </DIV>\n" );
+						myfprintf( thumbfile, " </BODY>\n</HTML>\n" );
+					}
+					fclose( thumbfile );
+					thumbfile=NULL;
+				}
 			}
 		}
 		if( ycount+xcount==0 )
@@ -1185,29 +1232,32 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			tackon( path, indexstr( page ) );
 			status( 3, local,  "[2] Opening '%s'", path );
 			if( !( file=fopen( path, "w" ) ) ) goto error;
-			if( STR_ISSET(SCONF(local,PREFS_INDEXTITLE)) )
-				tprintf( tmpbuf, SCONF(local,PREFS_INDEXTITLE), pn, pict, local, page+1, numpages );
-			else
-				sprintf( tmpbuf, "%s%sPage %d / %d", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", page+1, numpages );
-			myfprintf( file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
-			if( STR_ISSET(SCONF(local,PREFS_CSS)) )
+			if( BCONF(local,PREFS_FULLDOC) )
 			{
-
-				myfprintf( file, "  <LINK REL=\"stylesheet\" HREF=\"" );
-				for( count=0 ; count<level ; count ++ ) myfprintf( file, "..%c", PATH_DELIMITER );
-				myfprintf( file, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
-			}
-			if( css )
-			{
-				myfprintf( file, "  <STYLE><!--\n" );
-				for( count=0; count<css_numrows; count++ )
+				if( STR_ISSET(SCONF(local,PREFS_INDEXTITLE)) )
+					tprintf( tmpbuf, SCONF(local,PREFS_INDEXTITLE), pn, pict, local, page+1, numpages );
+				else
+					sprintf( tmpbuf, "%s%sPage %d / %d", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", page+1, numpages );
+				myfprintf( file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
+				if( STR_ISSET(SCONF(local,PREFS_CSS)) )
 				{
-					myfprintf( file, "   %s\n", css[count] );
+	
+					myfprintf( file, "  <LINK REL=\"stylesheet\" HREF=\"" );
+					for( count=0 ; count<level ; count ++ ) myfprintf( file, "..%c", PATH_DELIMITER );
+					myfprintf( file, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
 				}
-				myfprintf( file, "  --></STYLE>\n" );
+				if( css )
+				{
+					myfprintf( file, "  <STYLE><!--\n" );
+					for( count=0; count<css_numrows; count++ )
+					{
+						myfprintf( file, "   %s\n", css[count] );
+					}
+					myfprintf( file, "  --></STYLE>\n" );
+				}
+				myfprintf( file, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
+				if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  <DIV CLASS=\"header\">\n" );
 			}
-			myfprintf( file, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
-			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  <DIV CLASS=\"header\">\n" );
 			if( indexheader )
 			{
 				for( count=0; count<indexheader_numrows; count++ )
@@ -1221,7 +1271,10 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				tprintf( tmpbuf, SCONF(local,PREFS_INDEXHEADER), pn, pict, local, page+1, numpages );
 				myfprintf( file, "   %s\n", tmpbuf );
 			}
-			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  </DIV>\n" );
+			if( BCONF(local,PREFS_FULLDOC) )
+			{
+				if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  </DIV>\n" );
+			}
 			myfprintf( file, "  <DIV CLASS=\"thumbnails\" ALIGN=\"center\">\n" );
 			index[0]='\0';
 			if( numpages>1 || (STR_ISSET(SCONF(local,PREFS_PARENT)) && STR_ISSET(SCONF(local,PREFS_PARENTDOC))) ) navbar_new( index );
@@ -1305,9 +1358,16 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			else pict=NULL;
 			if( pict )
 			{
-				strcpy( path, SCONF(local,PREFS_THUMBDIR) );
-				tackon( path, (char *)basename( pict->p_path ) );
-				myfprintf( file, "<A HREF=\"%s.html\">", path );
+				if( !BCONF(local,PREFS_FLAT) )
+				{
+					strcpy( path, SCONF(local,PREFS_THUMBDIR) );
+					tackon( path, (char *)basename( pict->p_path ) );
+					myfprintf( file, "<A HREF=\"%s.html\">", path );
+				}
+				else
+				{
+					myfprintf( file, "<A HREF=\"%s\">", (char *)basename( pict->p_path ) );
+				}
 			}
 			myfprintf( file, "<IMG ALT=\"%s\" SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>%s%s", pn->pn_title, pn->pn_thumbnail.p_path, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space, BCONF(local,PREFS_TITLES)?"<BR>":"", BCONF(local,PREFS_TITLES)?pn->pn_title:"" );
 			if( pict ) myfprintf( file, "</A>" );
@@ -1357,8 +1417,10 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			if( strlen( index ) ) myfprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
 
 			myfprintf( file, "  </DIV>\n" );
-
-			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  <DIV CLASS=\"footer\">\n" );
+			if( BCONF(local,PREFS_FULLDOC) )
+			{
+				if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  <DIV CLASS=\"footer\">\n" );
+			}
 			if( indexfooter )
 			{
 				for( count=0; count<indexfooter_numrows; count++ )
@@ -1372,9 +1434,11 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				tprintf( tmpbuf, SCONF(local,PREFS_INDEXFOOTER), pn, pict, local, page+1, numpages );
 				myfprintf( file, "   %s\n", tmpbuf );
 			}
-			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
-
-			myfprintf( file, " </BODY>\n</HTML>\n" );
+			if( BCONF(local,PREFS_FULLDOC) )
+			{
+				if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
+				myfprintf( file, " </BODY>\n</HTML>\n" );
+			}
 			fclose( file );
 			file=NULL;
 		}
@@ -1385,7 +1449,10 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 		if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(SCONF(local,PREFS_CAPTION)) ) myfprintf( file, "   <BR><SPAN CLASS=\"caption\">%s</SPAN>\n", SCONF(local,PREFS_CAPTION) );
 		if( strlen( index ) ) myfprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
 		myfprintf( file, "  </DIV>\n" );
-		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  <DIV CLASS=\"footer\">\n" );
+		if( BCONF(local,PREFS_FULLDOC) )
+		{
+			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  <DIV CLASS=\"footer\">\n" );
+		}
 		if( indexfooter )
 		{
 			for( count=0; count<indexfooter_numrows; count++ )
@@ -1399,8 +1466,11 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			tprintf( tmpbuf, SCONF(local,PREFS_INDEXFOOTER), pn, pict, local, page+1, numpages );
 			myfprintf( file, "   %s\n", tmpbuf );
 		}
-		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
-		myfprintf( file, " </BODY>\n</HTML>\n" );
+		if( BCONF(local,PREFS_FULLDOC) )
+		{
+			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
+			myfprintf( file, " </BODY>\n</HTML>\n" );
+		}
 		fclose( file );
 		file=NULL;
 	}

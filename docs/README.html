@@ -322,12 +322,45 @@
    <TR><TH>%%</TH><TD>% (a percent sign)</TD></TR>
    </TABLE></DD>
    <P></P>
-   <DT><SPAN CLASS="name">INDEAXHEADERFILE</SPAN>, <SPAN CLASS="name">INDEXFOOTERFILE</SPAN>, <SPAN CLASS="name">PICTUREHEADERFILE</SPAN>, <SPAN CLASS="name">PICTUREFOOTERFILE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DT><SPAN CLASS="name">INDEXHEADERFILE</SPAN>, <SPAN CLASS="name">INDEXFOOTERFILE</SPAN>, <SPAN CLASS="name">PICTUREHEADERFILE</SPAN>, <SPAN CLASS="name">PICTUREFOOTERFILE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Embed the contents of the file at the corresponding place in the HTML-documents. No printf-substitution is made.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">FULLDOC</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Whether or not to write full HTML document or just the contents between &lt;BODY&gt; and &lt;/BODY&gt;</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">FLAT</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Normally thumnails are put into a subdirectory. By settings FLAT to false thumbnails will be suffixed with _tn rather than put into a subdirectory.</DD>
    <P></P>
   </DL>
   <P></P>
   The best way to learn a program still is to experiment. It's also the perfect excuse for a developer to write poor documentation =).
+  <P></P>
+  <H3>ALBUM.XML</H3>
+  By running <CODE>gfxindex --writealbum</CODE> GFXIndex will write a template album.xml to the picture directory. This file is read in when indexing that directory and is used to add options to album and pictures when thumbnailing. The syntax is very specific and GFXIndex will abort if it detects an error in this file.<P></P>
+  You may put &lt;TITLE&gt; and &lt;CAPTION&gt; tags after the &lt;ALBUM&gt; tag to set the album title and caption (and thus not needing the --caption or --title options).<P></P>
+  You may add ROTATE=&quot;<I>degree</I>&quot; to the &lt;PICTURE&gt; tag with the value of<BR>
+  0 - Don't rotate or use the rotation from EXIF data.<BR>
+  90, 180, 270 - Rotate the selected amount of degrees.
+  360 - Never rotate. Effectly ignoring EXIF rotate tags.<P></P>
+  You may also add SKIP=&quot;<I>true</I>&quot; to the &lt;PICTURE&gt; tag if you want to exclude a picture from the album.<P></P>
+  Here's an example
+<pre>
+&lt;?<b>xml</b><b> </b><b>version</b>=&quot;1.0&quot;<b> </b><b>encoding</b>=&quot;ISO-8859-1&quot;?&gt;
+&lt;Album&gt;
+ &lt;Title&gt;My trip to Moon&lt;/Title&gt;
+ &lt;Caption&gt;In july 1969 I went on a trip to the moon visiting some historical sites&lt;/Caption&gt;
+ &lt;Picture <b>path</b>=&quot;p6170062.jpg&quot; <b>rotate</b>=&quot;90&quot;&gt;
+  &lt;Title&gt;Sea of tranquility&lt;/Title&gt;
+  &lt;Caption&gt;Me and my buddy Buz in front of the LM&lt;/Caption&gt;
+ &lt;/Picture&gt;
+ &lt;Picture <b>path</b>=&quot;p6170064.jpeg&quot; <b>skip</b>=&quot;true&quot;&gt;
+  &lt;Title&gt;LM interior&lt;/Title&gt;
+  &lt;Caption&gt;The interior of the lunar module&lt;/Caption&gt;
+ &lt;/Picture&gt;
+&lt;/Album&gt;
+</pre>
+
+  <P></P>
   <H3>Future</H3>
   <UL>
    <LI>Bugs... <em>&quot;a dead bug is a good bug&quot;</em>
@@ -336,7 +369,7 @@
   </UL>
   <P></P>
   <HR NOSHADE SIZE="1">
-  <SMALL>Updated for 2.0pre2. 2004-Feb-23</SMALL>
+  <SMALL>Updated for 2.0pre3. 2004-Jul-19</SMALL>
   </TD><TD BGCOLOR="#000000">&nbsp;</TD></TR></TABLE>
  </BODY>
 </HTML>

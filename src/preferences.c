@@ -107,5 +107,7 @@ ConfArgItem config_definition[]=
 	{ "pictureheaderfile", CT_ARG_STR, '\0', CIA_BOTH, DEFAULT_PICTUREHEADERFILE, "Embed file at the beginning of each document", NULL },
 	{ "picturefooter", CT_ARG_STR, '\0', CIA_BOTH, DEFAULT_PICTUREFOOTER, "Format of footer", NULL },
 	{ "picturefooterfile", CT_ARG_STR, '\0', CIA_BOTH, DEFAULT_PICTUREFOOTERFILE, "Embed file at the end of each document", NULL },
+	{ "fulldoc", CT_ARG_BOOL, '\0', CIA_BOTH, (void *)DEFAULT_FULLDOC, "Write full html document or just the body contents", NULL },
+	{ "flat", CT_ARG_BOOL, '\0', CIA_BOTH, (void *)DEFAULT_FLAT, "Flat directory structure", NULL },
 	{ NULL, CT_ARG_END, '\0', CIA_BOTH, NULL, NULL, NULL }
 };

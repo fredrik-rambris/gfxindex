@@ -293,3 +293,11 @@
 #ifndef DEFAULT_PICTUREFOOTERFILE
 	#define DEFAULT_PICTUREFOOTERFILE (char *)NULL
 #endif
+
+#ifndef DEFAULT_FULLDOC
+	#define DEFAULT_FULLDOC TRUE
+#endif
+
+#ifndef DEFAULT_FLAT
+	#define DEFAULT_FLAT FALSE
+#endif

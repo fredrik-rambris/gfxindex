@@ -1,3 +1,22 @@
+Mon Jul 19 22:22:36 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Jörg Zöllner <joerg.z.77@gmx.net> reported that directory traversing didn't
+  work past one level down. That should be fixed now.
+
+Wed Apr 07 17:44:27 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Another bug reported by Andrew Tait nailed down. The indexheaderfile etc
+  files didn't quite work correct on Windows. Also if the file didn't end with
+  a newline the last row was ignored.
+
+* Added an option for outputting just the contents between <body> and </body>
+  and not a full HTML document. Suggested by Andrew Tait. See --nofulldoc
+
+* Added another option to allow for a flat directory structure. Right now it
+  adds _tn to the thumbnails filename (like pc26534_tn.jpg) and links directly
+  to the image instead of a HTML document. Also Andrew's suggestion See --flat
+
+Mon Apr 05 15:11:00 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Fixed a typo in the docs. Thanx Andrew Tait <andrew@arduous.net>
+
 Mon Feb 23 22:59:46 2004  Fredrik Rambris  <fredrik@rambris.com>
 * Updated the documentation
 

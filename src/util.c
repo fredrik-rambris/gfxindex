@@ -818,7 +818,6 @@ char **Text2ArrayPtr( char *Buffer, unsigned int Length, unsigned int *NOL )
 			}
 		}
 	}
-
 	if( !NumLines ) return( NULL );
 
 	if( !( retptr=calloc( NumLines, sizeof( char * ) ) ) )
@@ -827,7 +826,7 @@ char **Text2ArrayPtr( char *Buffer, unsigned int Length, unsigned int *NOL )
 	}
 
 	/* Set NOL to the number of lines */
-	if( NOL ) *NOL=NumLines;
+	if( NOL ) *NOL=NumLines+(Length>0?1:0);
 
 	NumLines=0;
 
@@ -854,7 +853,7 @@ char **Text2ArrayPtr( char *Buffer, unsigned int Length, unsigned int *NOL )
 	return( retptr );
 }
 
-char **readfile( const char *filename, int *numrows )
+char **readfile( const char *filename, unsigned int *numrows )
 {
 	char path[1024];
 	long file_size;
@@ -872,7 +871,7 @@ char **readfile( const char *filename, int *numrows )
 	if( fseek( fp, 0, SEEK_END )!=0 ) goto error;
 	if( !( file_size=ftell( fp ) ) ) goto error;
 	if( fseek( fp, 0, SEEK_SET )!=0 ) goto error;
-	if( !( buf=gfx_new( char, file_size ) ) ) goto error;
+	if( !( buf=gfx_new0( char, file_size+1 ) ) ) goto error;
 	if( !fread( buf, file_size, 1, fp ) ) goto error;
 	fclose( fp );
 	ret=Text2ArrayPtr( buf, file_size, numrows );

@@ -9,6 +9,8 @@ echo "Compiling program"
 /usr/local/cross-tools/bin/i386-mingw32msvc-gcc $( cat sources.txt ) src/win32.c -I. -Isrc -Isrc/libgfx -Isrc/libtaglist -I/usr/local/cross-tools/include -I/usr/local/cross-tools/include/libexif -I/usr/local/cross-tools/include/libxml2 -I/usr/local/cross-tools/include/libpng12 -L/usr/local/cross-tools/lib  -lpopt -ljpeg -lm -lexif -liberty -lexpat -static -lpng -lz src/resource.o -o gfxindex.exe -fexpensive-optimizations -s -O3 -DSTATIC -DHAVE_CONFIG_H -DHAVE_LIBJPEG -DHAVE_LIBEXPAT -DHAVE_LIBEXIF -DHAVE_LIBPNG || exit
 echo "Compressing executable"
 upx --best -q -q -q gfxindex.exe || exit
+rm -f gfxindex-exe.zip >/dev/null 2>/dev/null
+zip -q9 gfxindex-exe.zip gfxindex.exe
 du -sm -h gfxindex.exe
 echo "Updating documentation"
 unix2dos -q -n COPYING COPYING.txt

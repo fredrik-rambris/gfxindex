@@ -45,7 +45,7 @@ int *arrdup( const int *arr );
 int arrlen( const int *arr );
 BOOL strtobool( const char *s );
 char **Text2ArrayPtr( char *Buffer, unsigned int Length, unsigned int *NOL );
-char **readfile( const char *filename, int *numrows );
+char **readfile( const char *filename, unsigned int *numrows );
 
 /* The original one in posix doesn't check for nulls etc */
 #undef strdup
