@@ -1,5 +1,5 @@
 /*
- * GFXIndex (c) 1999 Fredrik Rambris <boost@amiga.nu>. All rights reserved.
+ * GFXIndex (c) 1999-2000 Fredrik Rambris <boost@amiga.nu>. All rights reserved.
  *
  * GFXIndex is a tool that creates HTML-indices of our images. Use with
  * supplied 'makethumbs' script.
@@ -8,9 +8,7 @@
  * of Amiga-specific stuff. This should now be 99% ANSI-C and should compile
  * under ANSI-C compliant compilers. Tested with egcs under Linux.
  *
- * This is licensed under GNU GPL (see below) with the following exception:
- * Nils Olle Fritiof Strand or staff in his companies may not use or sell this
- * software.
+ * This is licensed under GNU GPL.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +29,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
-#define VERSION "1.7"
+#define VERSION "1.8"
 #define OS "Linux"
 
 #ifndef stricmp
@@ -41,8 +40,8 @@
 
 FILE *dbfile=NULL;
 FILE *ifile=NULL;
-char IndexString[1024]="";
-char ThumbString[1024]="";
+char IndexString[1024*16]="";
+char ThumbString[1024*16]="";
 char *PageTitle=NULL;
 
 struct ThumbData
@@ -246,7 +245,7 @@ void indexline( int current, int total )
 
 void ThumbIndex( struct ThumbData *node, int icount )
 {
-	char tempbuf[128];
+	char tempbuf[1024];
 	char *tempptr;
 	ThumbString[0]='\0';
 	if( left ) strcat( ThumbString, left );
@@ -518,13 +517,13 @@ int main( int argc, char *argv[] )
 		/* Allocate a node and link it to the list */
 		if( node )
 		{
-			if( !( node->next=(struct ThumbData *)malloc( sizeof( struct ThumbData ) ) ) ) quit(1);
+			if( !( node->next=(struct ThumbData *)calloc( 1, sizeof( struct ThumbData ) ) ) ) quit(1);
 			node->next->prev=node;
 			node=node->next;
 		}
 		else
 		{
-			if( !( node=(struct ThumbData *)malloc( sizeof( struct ThumbData ) ) ) ) quit(1);
+			if( !( node=(struct ThumbData *)calloc( 1, sizeof( struct ThumbData ) ) ) ) quit(1);
 			if( !thumblist ) thumblist=node;
 		}
 		if( !( node->image_file=malloc( strlen( fname )+1 ) ) ) quit(1);
@@ -537,20 +536,19 @@ int main( int argc, char *argv[] )
 		node->thumb_height=atoi( thumbysize );
 		numpic++;
 	}
-
 	close( dbfile );
 	dbfile=NULL;
 
 	for( node=thumblist; node; node=node->next )
 	{
-
 		if( (ycount+xcount)==0 )
 		{
-	    	sprintf( ifname, icount?"index%ld.html":"index.html", icount );
-	    	printf("Creating %s\n", ifname );
-	    	if( !( ifile=fopen( ifname, "w" ) ) ) quit( 1 );
-	    	fprintf( ifile, "<HTML>\n <HEAD>\n  <TITLE>%s%s[ %ld / %ld ]</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " (" OS ") by Fredrik Rambris\">\n </HEAD>\n <BODY BGCOLOR=\"#ffffff\">\n  <CENTER>\n", PageTitle?PageTitle:"", PageTitle?" ":"", icount+1, ( numpic/(xstop*ystop) )+1 );
-	    	indexline( icount, ( (numpic-1)/(xstop*ystop) ) );
+			sprintf( ifname, icount?"index%ld.html":"index.html", icount );
+			printf("Creating %s\n", ifname );
+			if( !( ifile=fopen( ifname, "w" ) ) ) quit( 1 );
+			fprintf( ifile, "<HTML>\n <HEAD>\n  <TITLE>%s%s[ %ld / %ld ]</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " (" OS ") by Fredrik Rambris\">\n </HEAD>\n <BODY BGCOLOR=\"#ffffff\">\n  <CENTER>\n", PageTitle?PageTitle:"", PageTitle?" ":"", icount+1, ( numpic/(xstop*ystop) )+1 );
+
+			indexline( icount, (int)( (numpic-1)/(xstop*ystop) ) );
 			if( IndexString[0] ) fprintf( ifile, "   %s<BR>\n", IndexString );
 			fprintf( ifile, "   <TABLE>\n");
 		}
@@ -566,7 +564,7 @@ int main( int argc, char *argv[] )
 		fprintf( dbfile, "   <A HREF=\"../%s\"><IMG SRC=\"../%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" BORDER=\"0\"></A><BR>\n", node->image_file, node->image_file, node->image_width, node->image_height );
 		fprintf( dbfile, "   <BR>%s", ThumbString );
 		fprintf( dbfile, "  <HR>\n  %s\n  </CENTER>\n </BODY>\n</HTML>", BottomString);
-		close( dbfile );
+		fclose( dbfile );
 		dbfile=NULL;
 		piccount++;
 		xcount++;
@@ -598,7 +596,6 @@ int main( int argc, char *argv[] )
 		else fprintf( ifile, "\n");
 		fprintf( ifile, "   <HR>\n   %s\n  </CENTER>\n </BODY>\n</HTML>", BottomString);
 	}
-
 	quit( 0 );
 	return( 0 );
 }
