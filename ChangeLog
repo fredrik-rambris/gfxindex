@@ -1,4 +1,17 @@
-Mon May 06 23:33  Fredrik Rambris <fredrik@rambris.com>
+Sat May 06 18:08  Fredrik Rambris <fredrik@rambris.com>
+* Got some reports from Francesco Zuliani <francesco.zuliani@ca.infn.it> that
+  gfxindex coredumped when supplying titles and having a .gfxindex. While
+  tracking I found some other unallocated memory. I finally found out that when
+  gfxindex copies the current settings it just copied pointers to the strings
+  and thus they were freed several times which ended up in a nice core dump.
+
+* Francesco also wondered how he could have thumbnails for Prev and Next just
+  like on the demo-page. That was done with an earlier version. I re-implemented
+  it in this version (that is totally rewritten).
+
+* 1.1 released
+
+Mon May 01 23:33  Fredrik Rambris <fredrik@rambris.com>
 * Got back the doc proofread by Adam and incorperated the changes.
   Time to do some uploading and announcing now...
 

@@ -1,5 +1,5 @@
 /*
- * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik.rambris@amiga.nu>. All rights reserved.
+ * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik@rambris.com>. All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,6 +55,7 @@ struct Global
 	gchar *thumbdir;
 	gboolean genindex, titles, numlink, showcredits, makethumbs;
 	gchar *title;
+	gint thumbscale;
 	gint xstop, ystop;
 	gchar *bodyargs;
 	gchar *cellargs;
@@ -79,7 +80,8 @@ char *stripws( char *str );
 void readconf( gchar *filename, struct Global *cfg );
 gint handleargs( gint argc, gchar **argv, struct Global *cfg );
 void free_empties( struct Global *cfg );
-struct Global *cleanup( struct Global *cfg );
+void cleanup( struct Global *cfg );
+struct Global *dupconf( struct Global *cfg );
 void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct Global *cfg );
 void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level );
 gchar *indexstr( int number );
@@ -113,8 +115,7 @@ gint main( gint argc, gchar **argv )
 	if( !global->quiet ) printf( "GFXIndex v" VERSION " (c) Fredrik Rambris 1999-2000.\n" );
 
 	makethumbs( global->dir, NULL, 0, global );
-
-	global=cleanup(global);
+	cleanup(global);
 	return( 0 );
 }
 
@@ -169,6 +170,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 #else
 		{ "numlink", 'n', POPT_ARG_NONE, NULL, 'n', "use numeric links to individial pages", NULL },
 #endif
+		{ "navthumbs", 'u', POPT_ARG_INT, &cfg->thumbscale, 0, "use thumbnails for Prev and Next (set scale)", "PERCENT" },
 		{ "numx", 'x', POPT_ARG_INT, &cfg->xstop, 0, "number of thumbnails per row", "NUM" },
 		{ "numy", 'y', POPT_ARG_INT, &cfg->ystop, 0, "number of rows per page", "NUM" },
 		{ "bodyargs", 'a', POPT_ARG_STRING, NULL, 'a', "statements inserted in the BODY tag", "STRING" },
@@ -282,7 +284,6 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				cfg->numlink=TRUE;
 #endif
 				break;
-
 			case 'a':
 				cfg->bodyargs=setstr( cfg->bodyargs, (gchar *)poptGetOptArg( optCon ) );
 				break;
@@ -337,6 +338,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				printf( "beveldark        %s\n", DEFAULT_BEVELDARK );
 				printf( "Create indexes?  %s\n", DEFAULT_GENINDEX?"Yes":"No" );
 				printf( "Show filenames?  %s\n", DEFAULT_TITLES?"Yes":"No" );
+				printf( "Use NavThumbs?   %s (%ld %%)\n", DEFAULT_THUMBSCALE?"Yes":"No", DEFAULT_THUMBSCALE );
 				printf( "numx             %ld\n", DEFAULT_XSTOP );
 				printf( "numy             %ld\n", DEFAULT_YSTOP );
 				printf( "bodyargs         %s\n", DEFAULT_BODYARGS );
@@ -346,9 +348,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				break;
 		}
 	}
-
       	cfg->title=setstr( cfg->title, poptGetArg( optCon ) );
-
 
 	if (c < -1)
 	{
@@ -421,6 +421,7 @@ void readconf( gchar *filename, struct Global *cfg  )
 		{ "credits", CA_ARG_BOOL, &cfg->showcredits },
 		{ "titles", CA_ARG_BOOL, &cfg->titles },
 		{ "numlink", CA_ARG_BOOL, &cfg->numlink },
+		{ "navthumbs", CA_ARG_INT, &cfg->thumbscale },
 		{ "numx", CA_ARG_INT, &cfg->xstop },
 		{ "numy", CA_ARG_INT, &cfg->ystop },
 		{ "bodyargs", CA_ARG_STR, &cfg->bodyargs },
@@ -512,41 +513,67 @@ void free_empties( struct Global *cfg )
 	free_empty( cfg->parentdoc );
 }
 
-struct Global *cleanup( struct Global *cfg )
+void cleanup( struct Global *cfg )
 {
 	if( cfg )
 	{
-		cfg->bgcolor=setstr( cfg->bgcolor, NULL );
-		cfg->bevelback=setstr( cfg->bevelback, NULL );
-		cfg->bevelbright=setstr( cfg->bevelbright, NULL );
-		cfg->beveldark=setstr( cfg->beveldark, NULL );
-		cfg->dir=setstr( cfg->dir, NULL );
-		cfg->thumbdir=setstr( cfg->thumbdir, NULL );
-		cfg->title=setstr( cfg->title, NULL );
-		cfg->title=setstr( cfg->bodyargs, NULL );
-		cfg->title=setstr( cfg->cellargs, NULL );
-		cfg->title=setstr( cfg->css, NULL );
-
-		cfg->parentdoc=setstr( cfg->parentdoc, NULL );
-		cfg->left=setstr( cfg->left, NULL );
-		cfg->space=setstr( cfg->space, NULL );
-		cfg->divider=setstr( cfg->divider, NULL );
-		cfg->right=setstr( cfg->right, NULL );
-		cfg->previous=setstr( cfg->previous, NULL );
-		cfg->next=setstr( cfg->next, NULL );
-		cfg->index=setstr( cfg->index, NULL );
-		cfg->parent=setstr( cfg->parent, NULL );
-
+		if( cfg->bgcolor ) g_free( cfg->bgcolor );
+		if( cfg->bevelback ) g_free( cfg->bevelback );
+		if( cfg->bevelbright ) g_free( cfg->bevelbright );
+		if( cfg->beveldark ) g_free( cfg->beveldark );
+		if( cfg->dir ) g_free( cfg->dir );
+		if( cfg->thumbdir ) g_free( cfg->thumbdir );
+		if( cfg->title ) g_free( cfg->title );
+		if( cfg->bodyargs ) g_free( cfg->bodyargs );
+		if( cfg->cellargs ) g_free( cfg->cellargs );
+		if( cfg->css ) g_free( cfg->css );
+		if( cfg->parentdoc ) g_free( cfg->parentdoc );
+		if( cfg->left ) g_free( cfg->left );
+		if( cfg->space ) g_free( cfg->space );
+		if( cfg->divider ) g_free( cfg->divider );
+		if( cfg->right ) g_free( cfg->right );
+		if( cfg->previous ) g_free( cfg->previous );
+		if( cfg->next ) g_free( cfg->next );
+		if( cfg->index ) g_free( cfg->index );
+		if( cfg->parent ) g_free( cfg->parent );
 		g_free( cfg );
-		cfg=NULL;
 	}
-	return( cfg );
 }
+
+struct Global *dupconf( struct Global *cfg )
+{
+	struct Global *local;
+	if( !cfg ) return( NULL );
+	if( !( local=g_new0( struct Global, 1 ) ) ) return( NULL );
+	memcpy( local, cfg, sizeof( struct Global ) );
+	if( cfg->bgcolor ) local->bgcolor=g_strdup( cfg->bgcolor );
+	if( cfg->bevelback ) local->bevelback=g_strdup( cfg->bevelback );
+	if( cfg->bevelbright ) local->bevelbright=g_strdup( cfg->bevelbright );
+	if( cfg->beveldark ) local->beveldark=g_strdup( cfg->beveldark );
+	if( cfg->dir ) local->dir=g_strdup( cfg->dir );
+	if( cfg->thumbdir ) local->thumbdir=g_strdup( cfg->thumbdir );
+	if( cfg->title ) local->title=g_strdup( cfg->title );
+	if( cfg->bodyargs ) local->bodyargs=g_strdup( cfg->bodyargs );
+	if( cfg->cellargs ) local->cellargs=g_strdup( cfg->cellargs );
+	if( cfg->css ) local->css=g_strdup( cfg->css );
+	if( cfg->parentdoc ) local->parentdoc=g_strdup( cfg->parentdoc );
+	if( cfg->left ) local->left=g_strdup( cfg->left );
+	if( cfg->space ) local->space=g_strdup( cfg->space );
+	if( cfg->divider ) local->divider=g_strdup( cfg->divider );
+	if( cfg->right ) local->right=g_strdup( cfg->right );
+	if( cfg->previous ) local->previous=g_strdup( cfg->previous );
+	if( cfg->next ) local->next=g_strdup( cfg->next );
+	if( cfg->index ) local->index=g_strdup( cfg->index );
+	if( cfg->parent ) local->parent=g_strdup( cfg->parent );
+	return( local );
+}
+
 
 void error( gchar *msg )
 {
 	if( msg ) fprintf(stderr, "*ERROR* %s\n", msg );
-	global=cleanup(global);
+	cleanup(global);
+	global=NULL;
 	exit(1);
 }
 
@@ -558,7 +585,7 @@ void setglobaldefaults( void )
 	global->ThumbWidth=DEFAULT_THUMBWIDTH;
 	global->ThumbHeight=DEFAULT_THUMBHEIGHT;
 	global->quality=(guint)((gfloat)DEFAULT_QUALITY*2.559);
-								
+	global->thumbscale=DEFAULT_THUMBSCALE;								
 	global->bgcolor=setstr( global->bgcolor, DEFAULT_BGCOLOR );
 	global->bevelback=setstr( global->bevelback, DEFAULT_BEVELBACK );
 	global->bevelbright=setstr( global->bevelbright, DEFAULT_BEVELBRIGHT );
@@ -605,14 +632,14 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 	struct ThumbData *td;
 	struct ProcessInfo *pi;
 	GdkImlibSaveInfo si={ 0, 0, 0, 0, 0, 0 };
-	struct Global local;
-	memcpy( &local, cfg, sizeof( struct Global ) );
+	struct Global *local;
+	local=dupconf( cfg );
 	g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", global->thumbdir, thumbslash?"/":"", "gfxindex" );
-	readconf( thumbpath->str, &local );
+	readconf( thumbpath->str, local );
 	g_string_sprintf( thumbpath, "%s%s%s", dir, slash?"/":"", ".gfxindex" );
-	readconf( thumbpath->str, &local );
-	free_empties( &local );
-	si.quality=local.quality;
+	readconf( thumbpath->str, local );
+	free_empties( local );
+	si.quality=local->quality;
 	//printf("%s\n", dir );
 	//if( processinfo ) processinfo=FALSE;
 
@@ -635,38 +662,38 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 		pi->up=FALSE;
 	}
 	/* Initialize our workspace */
-	pi->thumb=gdk_pixmap_new( NULL, local.ThumbWidth, local.ThumbWidth, 24 );
+	pi->thumb=gdk_pixmap_new( NULL, local->ThumbWidth, local->ThumbWidth, 24 );
 	pi->gc=gdk_gc_new( pi->thumb );
-	if( local.bevel )
+	if( local->bevel )
 	{
-		if( !gdk_color_parse( local.bevelback, &pi->col[0] ) )
+		if( !gdk_color_parse( local->bevelback, &pi->col[0] ) )
 		{
 			pi->col[0].red=pi->col[0].green=pi->col[0].blue=0xc0c0;
 			g_warning( "Couldn't parse color" );
 		}
 		gdk_imlib_best_color_get( &pi->col[0] );
-		if( !gdk_color_parse( local.bevelbright, &pi->col[1] ) ) g_warning( "Couldn't parse color" );
+		if( !gdk_color_parse( local->bevelbright, &pi->col[1] ) ) g_warning( "Couldn't parse color" );
 		gdk_imlib_best_color_get( &pi->col[1] );
-		if( !gdk_color_parse( local.beveldark, &pi->col[2] ) ) g_warning( "Couldn't parse color" );
+		if( !gdk_color_parse( local->beveldark, &pi->col[2] ) ) g_warning( "Couldn't parse color" );
 		gdk_imlib_best_color_get( &pi->col[2] );
 	}
 	else
 	{
-		if( !gdk_color_parse( local.bgcolor, &pi->col[0] ) ) g_warning( "Couldn't parse color" );
+		if( !gdk_color_parse( local->bgcolor, &pi->col[0] ) ) g_warning( "Couldn't parse color" );
 		gdk_imlib_best_color_get( &pi->col[0] );
 	}
 
 	slash=(dir[strlen(dir)-1]!='/');
-	thumbslash=(local.thumbdir[strlen(local.thumbdir)-1]!='/');
+	thumbslash=(local->thumbdir[strlen(local->thumbdir)-1]!='/');
 	if( dirhandle=opendir( dir ) )
 	{
 		/* First we see to it that the thumbdir exist */
-		g_string_sprintf( thumbpath, "%s%s%s", dir, slash?"/":"", local.thumbdir );
+		g_string_sprintf( thumbpath, "%s%s%s", dir, slash?"/":"", local->thumbdir );
 		if( !file_exist( thumbpath->str ) ) mkdir( thumbpath->str, 0755 );
 
 		/* If we don't want to overwrite everything. Load the current thumblist */
-		g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local.thumbdir, thumbslash?"/":"", "files.db" );
-		if( !local.overwrite ) thumbs=loadthumblist( thumbs, thumbpath->str );
+		g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local->thumbdir, thumbslash?"/":"", "files.db" );
+		if( !local->overwrite ) thumbs=loadthumblist( thumbs, thumbpath->str );
 
 		while( de=readdir( dirhandle ) )
 		{
@@ -678,15 +705,15 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 				if( stat( path->str, &buf ) ) perror( path->str );
 				else
 				{
-					if( S_ISDIR(buf.st_mode) && local.recursive )
+					if( S_ISDIR(buf.st_mode) && local->recursive )
 					{
-						makethumbs( path->str, pi, level+1, &local );
+						makethumbs( path->str, pi, level+1, local );
 					}
-					else if( S_ISREG(buf.st_mode) && local.makethumbs )
+					else if( S_ISREG(buf.st_mode) && local->makethumbs )
 					{
 						if( checkext( path->str ) )
 						{
-							g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local.thumbdir, thumbslash?"/":"", de->d_name );
+							g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local->thumbdir, thumbslash?"/":"", de->d_name );
 
 							/* Replace the extension with jpg */
 							if( str=strrchr( thumbpath->str, '.' ) )
@@ -695,28 +722,28 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 								g_string_append( thumbpath, "jpg" );
 							}
 
-							if( local.overwrite || !file_exist( thumbpath->str ) )
+							if( local->overwrite || !file_exist( thumbpath->str ) )
 							{
 								/* Create the actual thumbnail */
 								/* First we clear the area */
 								gdk_gc_set_foreground( pi->gc, &pi->col[0] );
-								gdk_draw_rectangle( pi->thumb, pi->gc, TRUE, 0, 0, local.ThumbWidth, local.ThumbHeight );
+								gdk_draw_rectangle( pi->thumb, pi->gc, TRUE, 0, 0, local->ThumbWidth, local->ThumbHeight );
 
 								/* Draw outer bevel */
-								if( local.bevel )
+								if( local->bevel )
 								{
 									gdk_gc_set_foreground( pi->gc, &pi->col[1] );
-									gdk_draw_line( pi->thumb, pi->gc, 0, 0, local.ThumbWidth-2, 0 );
-									gdk_draw_line( pi->thumb, pi->gc, 0, 1, 0, local.ThumbHeight-2 );
+									gdk_draw_line( pi->thumb, pi->gc, 0, 0, local->ThumbWidth-2, 0 );
+									gdk_draw_line( pi->thumb, pi->gc, 0, 1, 0, local->ThumbHeight-2 );
 									gdk_gc_set_foreground( pi->gc, &pi->col[2] );
-									gdk_draw_line( pi->thumb, pi->gc, local.ThumbWidth-1, 1, local.ThumbWidth-1, local.ThumbHeight-1 );
-									gdk_draw_line( pi->thumb, pi->gc, 0, local.ThumbHeight-1, local.ThumbWidth-2, local.ThumbHeight-1 );
+									gdk_draw_line( pi->thumb, pi->gc, local->ThumbWidth-1, 1, local->ThumbWidth-1, local->ThumbHeight-1 );
+									gdk_draw_line( pi->thumb, pi->gc, 0, local->ThumbHeight-1, local->ThumbWidth-2, local->ThumbHeight-1 );
 								}
 
 								/* Then we load the original image */
 								if( pi->im=gdk_imlib_load_image( path->str ) )
 								{
-									if( !local.quiet )
+									if( !local->quiet )
 									{
 										if( pi->up ) printf( "\x1bM\x1b[K" );
 										printf( "Creating thumbnail for %s...\n", path->str );
@@ -724,21 +751,21 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 									}
 									/* Calculate scaling factor */
 									if( pi->im->rgb_width > pi->im->rgb_height )
-										factor=(gdouble)pi->im->rgb_width / (gdouble)local.ThumbWidth;
+										factor=(gdouble)pi->im->rgb_width / (gdouble)local->ThumbWidth;
 									else
-										factor=(gdouble)pi->im->rgb_height / (gdouble)local.ThumbHeight;
+										factor=(gdouble)pi->im->rgb_height / (gdouble)local->ThumbHeight;
 
 									/* The width and height of the scaled down image */
 									w=pi->im->rgb_width/factor;
 									h=pi->im->rgb_height/factor;
 
 									/* Draw inner bevel */
-									if( local.bevel )
+									if( local->bevel )
 									{
 										w-=8;
 										h-=8;
-										x1=((local.ThumbWidth-w )/2)-1;
-										y1=((local.ThumbHeight-h )/2)-1;
+										x1=((local->ThumbWidth-w )/2)-1;
+										y1=((local->ThumbHeight-h )/2)-1;
 										x2=x1+(w+1);
 										y2=y1+(h+1);
 
@@ -751,10 +778,10 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 									}
 
 									/* Scale and place the image in the thumbnail */
-									if( local.pad )
+									if( local->pad )
 									{
-										gdk_imlib_paste_image( pi->im, pi->thumb, (local.ThumbWidth-w)/2, (local.ThumbHeight-h)/2, w, h);
-										pi->thumbim=gdk_imlib_create_image_from_drawable( pi->thumb, NULL, 0, 0, local.ThumbWidth, local.ThumbHeight );
+										gdk_imlib_paste_image( pi->im, pi->thumb, (local->ThumbWidth-w)/2, (local->ThumbHeight-h)/2, w, h);
+										pi->thumbim=gdk_imlib_create_image_from_drawable( pi->thumb, NULL, 0, 0, local->ThumbWidth, local->ThumbHeight );
 									}
 									else
 									{
@@ -793,25 +820,27 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 				}
 			}
 		}
-		if( local.makethumbs )
+		if( local->makethumbs )
 		{
-			g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local.thumbdir, thumbslash?"/":"", "files.db" );
+			g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local->thumbdir, thumbslash?"/":"", "files.db" );
 			thumbs=g_list_sort( thumbs, (GCompareFunc)thumbcomp );
 			savethumblist( thumbs, thumbpath->str );
 		}
 		closedir( dirhandle );
-		if( local.genindex ) gfxindex( &local, dir, thumbs, level );
+		if( local->genindex ) gfxindex( local, dir, thumbs, level );
 	}
 	else perror( "opendir" );
-	g_string_free( path, TRUE );
-	g_string_free( thumbpath, TRUE );
+	if( path ) g_string_free( path, TRUE );
+	if( thumbpath ) g_string_free( thumbpath, TRUE );
 	g_list_foreach( thumbs, freenode, NULL );
 	g_list_free( thumbs );
 	if( !processinfo )
 	{
 		gdk_pixmap_unref( pi->thumb );
-		g_free( processinfo );
+		g_free( pi );
 	}
+	cleanup( local );
+	local=NULL;
 }
 
 void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
@@ -844,22 +873,38 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 		}
 		fprintf( thumbfile, " </HEAD>\n <BODY%s%s>\n  <DIV ALIGN=\"center\">\n", local->bodyargs?" ":"", local->bodyargs?local->bodyargs:"" );
 		if( numpics>1 ) navbar_new( thumbindex );
-		if( node->prev && local->previous )
+		if( node->prev && ( local->previous || local->thumbscale ) )
 		{
 			if( !( tmpstr=strrchr( ((struct ThumbData *)node->prev->data)->thumb, '/' ) ) ) tmpstr=((struct ThumbData *)node->prev->data)->thumb;
 			else tmpstr++;
-			navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, local->previous );
+
+			if( local->thumbscale )
+			{
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->prev->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->prev->data)->thumbheight*local->thumbscale/100), local->previous );
+			}
+			else
+			{
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, local->previous );
+			}
 		}
 		if( local->index ) navbar_add( local, thumbindex, "<A HREF=\"%s\">%s</A>", path->str, local->index );
-		if( node->next && local->next )
+		if( node->next && ( local->next || local->thumbscale ) )
 		{
 			if( !( tmpstr=strrchr( ((struct ThumbData *)node->next->data)->thumb, '/' ) ) ) tmpstr=((struct ThumbData *)node->next->data)->thumb;
 			else tmpstr++;
-			navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, local->next );
+
+			if( local->thumbscale )
+			{
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->next->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->next->data)->thumbheight*local->thumbscale/100), local->next );
+			}
+			else
+			{
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\">%s</A>", tmpstr, local->next );
+			}
 		}
 		if( numpics>1 ) navbar_end( local, thumbindex );
 		if( numpics>1 ) fprintf( thumbfile, "   <SPAN ID=\"navbar\">%s</SPAN><BR>\n", thumbindex->str );
-		fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" BORDER=\"0\"></A><BR>\n", path->str, td->image, td->imagewidth, td->imageheight );
+		fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" BORDER=\"0\" VSPACE=\"2\"></A><BR>\n", path->str, td->image, td->imagewidth, td->imageheight );
 		if( numpics>1 ) fprintf( thumbfile, "   <SPAN ID=\"navbar\">%s</SPAN>\n", thumbindex->str );
 		if( local->showcredits ) fprintf( thumbfile, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://boost.linux.kz/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></SPAN>\n" );
 		fprintf( thumbfile, "  </DIV>\n </BODY>\n</HTML>\n" );
@@ -978,13 +1023,14 @@ gchar *setstr( gchar *old, gchar *new )
 {
 	if( old )
 	{
-		free( old );
+		g_mem_check( old );
+		g_free( old );
 		old=NULL;
 	}
 
 	if( new )
 	{
-		if( old=(gchar *)malloc( strlen( new )+1 ) )
+		if( old=(gchar *)g_malloc( strlen( new )+1 ) )
 		{
 			strcpy( old, new );
 		}

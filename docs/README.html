@@ -100,7 +100,7 @@
    <DT><IMG SRC="pad.jpg" ALIGN="right" WIDTH="128" HEIGHT="144" ALT="Padded thumbnail"><SPAN CLASS="name">PAD</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Pad all thumbnails to equal size.</DD>
    <P></P>
-   <DT><SPAN CLASS="name">THUMBWIDTH</SPAN> & <SPAN CLASS="name">THUMBHEIGHT</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DT><SPAN CLASS="name">THUMBWIDTH</SPAN> &amp; <SPAN CLASS="name">THUMBHEIGHT</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Sets the width and height of the thumbnails. The image is scaled poportionally so the final thumbnail may not have the proportions you set unless it's padded (see pad)</DD>
    <P></P>
    <DT><SPAN CLASS="name">QUALITY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
@@ -115,7 +115,7 @@
    <DT><SPAN CLASS="name">BEVELBG</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Sets the color of the frame around the image when beveled</DD>
    <P></P>
-   <DT><SPAN CLASS="name">BEVELBRIGHT</SPAN> & <SPAN CLASS="name">BEVELDARK</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DT><SPAN CLASS="name">BEVELBRIGHT</SPAN> &amp; <SPAN CLASS="name">BEVELDARK</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Sets the colors of the bright and dark edges that make up the <I>bevel effect</I>. It's a good idea to set them to a blend of BEVELBG.</DD>
    <P></P>
    <DT><SPAN CLASS="name">INDEXES</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
@@ -130,7 +130,11 @@
    <DT><SPAN CLASS="name">NUMLINK</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Show numbered links to each page. [ <U><FONT COLOR="#0000ff">1</FONT></U> | <U><FONT COLOR="#0000ff">2</FONT></U> | <U><FONT COLOR="#0000ff">3</FONT></U> | <U><FONT COLOR="#0000ff">4</FONT></U> ]</DD>
    <P></P>
-   <DT><SPAN CLASS="name">NUMX</SPAN> & <SPAN CLASS="name">NUMY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DT><IMG SRC="thumbs.gif" WIDTH="256" HEIGHT="97" ALIGN="right"><SPAN CLASS="name">THUMBSCALE</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DD>Use thumbnails for Prev and Next when viewing an image. Supply a percentage of the original thumbnail size it will have.<BR><B>100</B> sets the sizes of these thumbnails to the same as the other thumbnails, <B>50</B> half, etc.<BR>
+   Set this to <B>0</B> and it will turn this feature off (default).</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">NUMX</SPAN> &amp; <SPAN CLASS="name">NUMY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Number of thumbnails per row and rows per page.<BR>
    An example, if I may:
    <PRE><SPAN CLASS="name">NUMX</SPAN> = <SPAN CLASS="value">16</SPAN> <SPAN CLASS="comment">// Sixteen thumbnails per row</SPAN>

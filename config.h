@@ -79,6 +79,10 @@
 	#define DEFAULT_NUMLINK FALSE
 #endif
 
+#ifndef DEFAULT_THUMBSCALE
+	#define DEFAULT_THUMBSCALE 0
+#endif
+
 #ifndef DEFAULT_XSTOP
 	#define DEFAULT_XSTOP 5
 #endif
