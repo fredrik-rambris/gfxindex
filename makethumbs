@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# MakeThumbs v0.2 (c) Fredrik Rambris <boost@amiga.nu>
+
+# CONFIG
+THUMBSIZE=96
+THUMBDIR="thumbnails/"
+DBFILE="$THUMBDIR/files.db"
+BGCOLOR="black"
+SLIDE=""
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+	"-size" )
+	    THUMBSIZE="$2"
+	    shift
+	;;
+	"-background")
+	    BACKGROUND="$2"
+	    shift
+	;;
+	"-bgcolor")
+	    BGCOLOR="$2"
+	    shift
+	;;
+	"-slide")
+	    SLIDE="on"
+	;;
+    esac
+    shift
+done
+
+# INIT
+if [ ! -e $THUMBDIR ] ; then
+mkdir $THUMBDIR
+fi
+
+touch "$DBFILE"
+
+
+if [ $SLIDE ] ; then
+	THUMBSIZE=$(( THUMBSIZE - 2 ))
+	ppmmake rgb:ba/ba/ba $THUMBSIZE $THUMBSIZE | pnmpad -black -r1 -b1 | pnmpad -white -l1 -t1 >/tmp/thumbslide.ppm
+	BACKGROUND="/tmp/thumbslide.ppm"
+	THUMBSIZE=$(( THUMBSIZE - 8 ))
+fi
+
+for file in *
+do
+thumbfile=$THUMBDIR${file%.*}.jpg
+if [ ! -e "$thumbfile" ] ; then
+
+info=$( anytopnm "$file" 2>/dev/null | pnmfile 2>/dev/null )
+if [ "$info" ] ; then
+echo -ne "Creating thumbnail for $file...                               \r" 
+
+xsize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $1 }' )
+ysize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $3 }' )         
+
+if [ $SLIDE ] ; then
+anytopnm "$file" | pnmscale -xysize $THUMBSIZE $THUMBSIZE | pnmpad -white -r1 -b1 | pnmpad -black -l1 -t1 >temp.pnm 
+else
+anytopnm "$file" | pnmscale -xysize $THUMBSIZE $THUMBSIZE >temp.pnm 
+fi
+
+info=$( pnmfile temp.pnm )
+thumbxsize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $1 }' )
+thumbysize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $3 }' )
+
+if [ $SLIDE ] ; then
+	THUMBSIZE=$(( THUMBSIZE + 10 ))
+fi
+
+addleft=$(( (THUMBSIZE-thumbxsize ) / 2 ))
+addright=$(( THUMBSIZE - thumbxsize - addleft  ))
+addtop=$(( (THUMBSIZE-thumbysize ) / 2 )) 
+addbottom=$(( THUMBSIZE - thumbysize - addtop ))
+
+if [ $BACKGROUND ] ; then
+    anytopnm "$BACKGROUND" | pnmcomp -xoff $addleft -yoff $addtop temp.pnm | cjpeg -quality 75 -optimize -progressive -smooth 10 -outfile "$thumbfile"
+else
+    pnmpad -$BGCOLOR -l$addleft -r$addright -t$addtop -b$addbottom temp.pnm | cjpeg -quality 75 -optimize -progressive -smooth 10 -outfile "$thumbfile"
+fi
+rm -f temp.pnm
+
+# Remove possible old entries in files.db
+
+grep -vw "$file" "$DBFILE" >"$DBFILE.new"
+
+echo "$file;$xsize;$ysize;$thumbfile;$THUMBSIZE;$THUMBSIZE" >>"$DBFILE.new"
+sort "$DBFILE.new" >"$DBFILE"
+rm -f "$DBFILE.new"
+
+if [ $SLIDE ] ; then
+	THUMBSIZE=$(( THUMBSIZE - 10 ))
+fi
+
+fi
+
+fi
+
+done
+
+if [ $SLIDE ] ; then
+	rm -f /tmp/thumbslide.ppm
+fi
+
+echo
