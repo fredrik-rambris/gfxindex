@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define VERSION "1.6"
+#define VERSION "1.7"
 #define OS "Linux"
 
 #ifndef stricmp
@@ -550,7 +550,7 @@ int main( int argc, char *argv[] )
 	    	printf("Creating %s\n", ifname );
 	    	if( !( ifile=fopen( ifname, "w" ) ) ) quit( 1 );
 	    	fprintf( ifile, "<HTML>\n <HEAD>\n  <TITLE>%s%s[ %ld / %ld ]</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " (" OS ") by Fredrik Rambris\">\n </HEAD>\n <BODY BGCOLOR=\"#ffffff\">\n  <CENTER>\n", PageTitle?PageTitle:"", PageTitle?" ":"", icount+1, ( numpic/(xstop*ystop) )+1 );
-	    	indexline( icount, ( numpic/(xstop*ystop) ) );
+	    	indexline( icount, ( (numpic-1)/(xstop*ystop) ) );
 			if( IndexString[0] ) fprintf( ifile, "   %s<BR>\n", IndexString );
 			fprintf( ifile, "   <TABLE>\n");
 		}
