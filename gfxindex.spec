@@ -1,5 +1,5 @@
 %define name     gfxindex
-%define ver      2.0pre1
+%define ver      2.0pre2
 %define rel      1
 %define prefix   /usr
 
@@ -15,8 +15,8 @@ Source: http://fredrik.rambris.com/files/%{name}-%{PACKAGE_VERSION}.tar.bz2
 BuildRoot: /var/tmp/%{name}-build-root
 URL: http://fredrik.rambris.com/%{name}/
 Provides: gfxindex
-Requires: glib popt
-BuildRequires: glib-devel popt
+Requires: glib popt libjpeg libpng libexif expat
+BuildRequires: glib-devel popt libjpeg-devel libpng-devel libexif-devel expat-devel
 
 %description
 GFXIndex helps you organize your pictures by creating thumbnails and indexing
@@ -43,7 +43,7 @@ rm -rf $RPM_BUILD_ROOT
 %postun
 
 %files
-%doc AUTHORS COPYING ChangeLog docs/README.html docs/bevel.png docs/pad.jpg docs/thumbs.gif extras/gfxindex.php3 extras/sample.css
+%doc AUTHORS COPYING ChangeLog docs/*
 
 %{prefix}/bin/gfxindex
 

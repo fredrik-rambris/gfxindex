@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//w3c//dtd html 4.0 transitional//en">
 <HTML>
  <HEAD>
-  <TITLE>GFXindex documentaion</TITLE>
+  <TITLE>GFXIndex documentaion</TITLE>
   <STYLE><!--
    BODY, TD { font-family: Trebuchet MS,Verdana,Tahoma,Arial,Helvetica,sans-serif; }
    BODY { background-color: #f0f0f0; margin: 0px }
@@ -16,20 +16,21 @@
    SPAN.comment { color: #880000; font-style: italic }
    SPAN.type { color: #0088ff; font-weight: bold }
    SPAN.logo { font-size: 18pt; font-weight: bold; font-family: Trebuchet MS }
+   SPAN.experimental { color: #ff0000 }
   --></STYLE>
  </HEAD>
  <BODY>
   <TABLE BORDER="0" CELLPADDING="8" CELLSPACING="0" WIDTH="100%"><TR><TD BGCOLOR="#000000">&nbsp;</TD><TD VALIGN="top" WIDTH="600">
-  <SPAN CLASS="logo">GFXindex</SPAN> - Thumbnailer and indexer<BR>
+  <SPAN CLASS="logo">GFXIndex</SPAN> - Thumbnailer and indexer<BR>
   <HR NOSHADE SIZE="1">
   <P></P>
   <H3>General Information</H3>
 
-  GFXIndex is a tool to manage your picture collection by creating thumbnails (small representation of the original picture) and HTML-indexes.
+  GFXIndex is a tool to manage your picture collection by creating thumbnails (small representation of the original picture), scale down the pictures to screen size (called &quot;bigs&quot; in GFXIndex lingo) and HTML-indexes.
   <P></P>
   The human brain can very quickly find a photo by looking at a collage made up miniatures a photo collection. This is why this type of software is very popular in these days when digital photography is in the grasp of many families. When the photo collection builds up one needs to have a way of organizing it. Also this &quot;gallery&quot;-format of thumbnails is a popular way of publishing images on the web as you quickly download the thumbnails and then select the image you want to see the full image.
   <P></P>
-  Since GFXindex first release a lot of other gallery indexers have been released and they all have their unique advantages. Some are online based software with database backend and upload capabilities, others are, like GFXindex, offline based where you prepare your indexes and then upload them. Ofcause if you have shell-access to your site you could ofcause run it on the server, still, by default GFXindex generates static HTML galleries.
+  Since GFXIndex first release a lot of other gallery indexers have been released and they all have their unique advantages. Some are online based software with database backend and upload capabilities, others are, like GFXIndex, offline based where you prepare your indexes and then upload them. Ofcause if you have shell-access to your site you could ofcause run it on the server, still, by default GFXIndex generates static HTML galleries.
   <p></P>
   The process of creating an album is usually done by changing to the directory where you have your images and running <CODE>gfxindex</CODE>. This generates the thumbnails, puts them into the directory <I>thumbnails</I> <SMALL>(can be configured)</SMALL> and writes the indexes into the current working directory. Thus creating a directory structure like:<PRE>
 .
@@ -53,6 +54,7 @@
   <!-- There is also an indexer made in PHP for use directly on the web. -->
   In previous versions there used to be an indexer made in PHP, but since the format of the cache file has changed I haven't updated it to handle this so until it is updated you will have to stick with static HTML or help me write one.
   <P></P>
+  A note. It's GFXIndex and not GFXindex, gfxindex, GFXINDEX, gfX1nD3x or anything else. Sorry if I've typed it any different before.
   <H3>Status</H3>
   The official web site is:<BR>
   <A HREF="http://fredrik.rambris.com/gfxindex/">http://fredrik.rambris.com/gfxindex/</A>
@@ -72,27 +74,30 @@
   The supplied pre-compiled Windows version has all these built in.
   <P></P>
   <H3>Installation</H3>
+  <H4>Build on a GNU system</H4>
   Nothing fancy here, folks.<BR>
   Edit src/defaults.h if you want to change some of the compiled in defaults.
   <PRE CLASS="code">
-  ./configure
-  make
-  make install    (as root)</PRE>
+  $ ./configure
+  $ make
+  # make install</PRE>
+  <H4>Install on Windows</H4>
+  Just run the installer.
   <P></P>
   <H3>Usage</H3>
   The most common usage is to run GFXIndex within the directory you wish to make HTML indexes.
   <P></P>
-  Arguments can be entered on the commandline or be written to a runcontrol file. Runcontrol files can be /etc/gfxindex, $HOME/.gfxindex, ./.gfxindex, ./.thumbnails/gfxindex
+  On Windows you can right click on a folder and select Create album with GFXIndex. It uses the settings from <EM>gfxindex.ini</EM> in the installation folder.
   <P></P>
-  ./ means the current working directory. If using the recursive option it will be relative to each and every directory tranversed. The parent options are kept when parsing the new options. Try setting wide settings such as background color and css, etc. in the directory base directory and title in each and every directory.
+  Arguments can be entered on the commandline or be read in from a runcontrol file. The path of this file caused some confusion in past versions. Nowdays the config is read once and the path has to be specified in command line.  <P></P>
   <P></P>
-  The options are pretty self-expanatory but I'll go ahead and explain them anyway.
+  The options are pretty self expanatory but I'll go ahead and explain them anyway.
   <P></P>
-  For the commandline options see gfxindex --help. This is the format of a rcfile.
+  For the commandline options see <CODE>gfxindex --help</CODE>. This is the format of a rcfile. Although in pretty much all the cases you can use the same option names on the command line as in rcfiles.
   <P></P>
   A rcfile is a regular text file. You may comment out the rest of the line with //. Each line consists of an option and a value separated by a '='. The formating is pretty liberal. After cutting the line by the first '=', whitespaces are stripped off. All chars are allowed except newline or carrige return.
   <P></P>
-  The name of the options are case insensitive.
+  The name of the options are not case sensitive.
   <P></P>
   There are three types of values: String, integer and boolean.
   <P></P>
@@ -102,6 +107,8 @@
   <P></P>
   An integer is simply a number
   <P></P>
+  An integer list is a comma-separated list of integers (3,7,11,13,17)
+  <P></P>
   An example:
   <P></P>
 <PRE><SPAN CLASS="comment">// A nice configfile</SPAN>
@@ -109,40 +116,82 @@
 <SPAN CLASS="name">Title</SPAN>     = <SPAN CLASS="value">My vacation on Mars</SPAN>
 <SPAN CLASS="name">Recursive</SPAN> = <SPAN CLASS="value">Yes</SPAN>
 <SPAN CLASS="name">Quality</SPAN>   = <SPAN CLASS="value">90</SPAN> <SPAN CLASS="comment">// JPEG quality of thumbs</SPAN>
-<SPAN CLASS="comment">// EOF</SPAN></PRE>
+<SPAN CLASS="comment">// EOF - Killroy was here</SPAN></PRE>
   <P></P>
   Available options are:
   <P></P>
   <DL>
-   <DT><SPAN CLASS="name">QUIET</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Print progress information or not</DD>
-   <P></P>
    <DT><SPAN CLASS="name">DIR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT> 
-   <DD>Directory to start with</DD>
+   <DD>Directory to start with. Default is the current directory.</DD>
    <P></P>
-   <DT><SPAN CLASS="name">MAKETHUMBS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Create thumbnails or not</DD>
+   <DT><SPAN CLASS="name">OUTDIR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT> 
+   <DD>Directory to put all created pictures and documents in. Defaults to the current directory.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">THUMBDIR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT> 
+   <DD>Name of directory where the thumbnails go. Defaults to <span class="value">thumbnails</span></DD>
+   <P></P>
+   <DT><SPAN CLASS="name">QUIET</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Print progress information or not. Is a shortcut for VERBOSE=0 or 1</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">VERBOSE</SPAN> (<SPAN CLASS="type">INT</SPAN>)</DT>
+   <DD>Specify the level of verbosity. 0 - Quiet, 1 - Normal progress, 2 - Lots of information</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">TITLE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>Title of the album.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">CAPTION</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>A description of the contents shown at the bottom.</DD>
    <P></P>
    <DT><SPAN CLASS="name">OVERWRITE</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Overwrite indices and thumbnails.</DD>
+   <DD>Overwrite indexes and thumbnails.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">REMAKETHUMBS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Force creation of thumbnails</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">REMAKEBIGS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Force creation of &quot;bigs&quot;</DD>
    <P></P>
    <DT><SPAN CLASS="name">RECURSIVE</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Dive into each directory.</DD>
    <P></P>
+   <DT><SPAN CLASS="name">THUMBS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Create thumbnails or not</DD>
+   <P></P>
    <DT><IMG SRC="pad.jpg" ALIGN="right" WIDTH="128" HEIGHT="144" ALT="Padded thumbnail"><SPAN CLASS="name">PAD</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Pad all thumbnails to equal size.</DD>
    <P></P>
+   <DT><SPAN CLASS="name">SOFTPAD</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>An alternative to padding the thumbnails with extra pixels, taking up more space on disk, is to set HSPACE and VSPACE properties accordingly in the IMG tags instead. Not 100% accurate but good enough for most.</DD>
+   <P></P>
    <DT><SPAN CLASS="name">THUMBWIDTH</SPAN> &amp; <SPAN CLASS="name">THUMBHEIGHT</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
-   <DD>Sets the width and height of the thumbnails. The image is scaled poportionally so the final thumbnail may not have the proportions you set unless it's padded (see pad)</DD>
+   <DD>Sets the width and height of the thumbnails. The image is scaled proportionally so the final thumbnail may not have the size you set unless it's padded (see pad)</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">WIDTHS</SPAN> (<SPAN CLASS="type">INTEGER LIST</SPAN>)</DT>
+   <DD>A comma-separated list of integers describing what size to scale the bigs (and thus activating this feature). Eg. 1024,800,640 will provide downsized versions of the original that fits squares of 1024x1024, 800x800 and 640x640.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">DEFWIDTH</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DD>The default width to use when linking from thumbnail and title. Ie. if you have 1024,800,640 in WIDTHS and set DEFWIDTH to 800 it's the 800 picture that will be shown when clicking on the thumbnail.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">COPY</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Whether the original image should be copied to the OUTDIR or not. This can be used if you have large originals that you don't want to share but rather let the viewer have smaller images (created with WIDTHS). Or if you DO want to share the original when using a separate OUTDIR.</DD>
    <P></P>
    <DT><SPAN CLASS="name">QUALITY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
-   <DD>Sets the JPEG quality for the thumbnails. 0 means poor and 100 means best quality and vice versa with the compression ratio / file size.</DD>
+   <DD>Sets the JPEG quality for the thumbnails. 0 means poor and 100 means best quality and vice versa with the compression ratio / file size. A value between 50-80 makes sense with thumbnails.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">BIGQUALITY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DD>The JPEG quality used when saving bigs. A value between 75-95 is probably ok.</DD>
    <P></P>
    <DT><SPAN CLASS="name">THUMBBGCOLOR</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Sets the color of the background plate when rendering thumbnails. Only visible when rendering transparent images and when padding is active.</DD>
    <P></P>
+   <DT><IMG SRC="background-alpha.jpg" WIDTH="397" HEIGHT="148" ALT="Thumbnail with background and alphachannel" ALIGN="right"><SPAN CLASS="name">THUMBBACKGROUND</SPAN> (<SPAN CLASS="type">STRING</SPAN>) <SPAN CLASS="experimental">EXPERIMENTAL</SPAN></DT>
+   <DD>Filename of an image to be loaded,scaled and finally pasted on the background plate instead of a single color.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">THUMBALPHA</SPAN> (<SPAN CLASS="type">STRING</SPAN>) <SPAN CLASS="experimental">EXPERIMENTAL</SPAN></DT>
+   <DD>Filename of an image containing the alpha-channel to apply to the image when creating a thumbnail. See the figure for an example. White pixels mean full opacity and black means full transparency. Everything in between ofcause control semi-transparency</DD>
+   <P></P>
    <DT><IMG SRC="bevel.png" WIDTH="128" HEIGHT="144" ALT="Beveled thumbnail" ALIGN="right"><SPAN CLASS="name">THUMBBEVEL</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Draws beveled frames around the image and the thumb. Selecting this silently activates padding.</DD>
+   <DD>Draws beveled frames around the image and the thumb. Selecting this activates padding.</DD>
    <P></P>
    <DT><SPAN CLASS="name">BEVELBG</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Sets the color of the frame around the image when beveled</DD>
@@ -150,21 +199,28 @@
    <DT><SPAN CLASS="name">BEVELBRIGHT</SPAN> &amp; <SPAN CLASS="name">BEVELDARK</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Sets the colors of the bright and dark edges that make up the <I>bevel effect</I>. It's a good idea to set them to a blend of BEVELBG.</DD>
    <P></P>
-   <DT><SPAN CLASS="name">INDEXES</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>If HTML-indexes are to be created or not. One reason for not creating them is if you, for instance, use the PHP-version of GFXIndex.</DD>
+   <DT><SPAN CLASS="name">SCALE</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DD>Method used when rescaling. Valid values are 1 - Nearest pixel (fast but ugly and should not be used), 2 - Bicubic (slow but smooth).<BR>
+   A note here. When possible GFXIndex try to <EM>prescale</EM> the image when loading. This can only be done on JPEG images and this is acheived before the final decoding is done and is very fast. This is the reason why thumbnailing is so fast compared to earlier versions of GFXIndex.</DD>
    <P></P>
-   <DT><SPAN CLASS="name">CREDITS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Whether or not to show the credits line in the bottom of the generated HTML-files. You're asked not to do this ;-).</DD>
+   <DT><SPAN CLASS="name">INDEXES</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>If HTML-indexes are to be created or not. One reason for not creating them is if you, for instance, use a PHP script to create the indexes on the fly (poor fly...).</DD>
    <P></P>
    <DT><SPAN CLASS="name">TITLES</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
-   <DD>Whether or not to show the filenames under the thumbnails. Most digital cameras generate non-interesting filenames and therefore it doesn't make much sense showing them.</DD>
+   <DD>Whether or not to show the filenames or titles under the thumbnails. Most digital cameras generate non-interesting filenames and therefore it doesn't make much sense showing them.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">EXTENSIONS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Whether or not to show extensions of the filenames. If you set this to FALSE and a file is called <EM>Mom.jpg</EM> the title will be <EM>Mom</EM></DD>
+   <P></P>
+   <DT><SPAN CLASS="name">CAPTIONS</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Show captions or not. See WRITEALBUM further down for an explanation of how to get captions.</DD>
    <P></P>
    <DT><SPAN CLASS="name">NUMLINK</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Show numbered links to each page. [ <U><FONT COLOR="#0000ff">1</FONT></U> | <U><FONT COLOR="#0000ff">2</FONT></U> | <U><FONT COLOR="#0000ff">3</FONT></U> | <U><FONT COLOR="#0000ff">4</FONT></U> ]</DD>
    <P></P>
-   <DT><IMG SRC="thumbs.gif" WIDTH="256" HEIGHT="97" ALIGN="right"><SPAN CLASS="name">THUMBSCALE</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
+   <DT><IMG SRC="thumbs.gif" WIDTH="256" HEIGHT="97" ALIGN="right"><SPAN CLASS="name">NAVTHUMBS</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Use thumbnails for Prev and Next when viewing an image. Supply a percentage of the original thumbnail size it will have.<BR><B>100</B> sets the sizes of these thumbnails to the same as the other thumbnails, <B>50</B> half, etc.<BR>
-   Set this to <B>0</B> and it will turn this feature off (default).</DD>
+   Set this to <B>0</B> and it will turn this feature off (default).<BR>Note. This used to be called THUMBSCALE</DD>
    <P></P>
    <DT><SPAN CLASS="name">NUMX</SPAN> &amp; <SPAN CLASS="name">NUMY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Number of thumbnails per row and rows per page.<BR>
@@ -176,11 +232,17 @@
    <DD>Arguments to put into the &lt;BODY&gt;-tag. Try this:
 <PRE><SPAN CLASS="name">BODYARGS</SPAN> = <SPAN CLASS="value">BGCOLOR="#000000" TEXT="#ffffff" LINK="#ff8800" VLINK="#ff8800" ALINK="#ffff00"</SPAN></PRE></DD>
    <P></P>
+   <DT><SPAN CLASS="name">TABLEARGS</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>Arguments for the &lt;TABLE&gt;-tag.</DD>
+   <P></P>
    <DT><SPAN CLASS="name">CELLARGS</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>Arguments for the &lt;TD&gt;-tag</DD>
    <P></P>
    <DT><SPAN CLASS="name">CSS</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
-   <DD>Path to a <A HREF="http://www.w3.org/Style/CSS/">Cascading Style Sheet</A> relative to the starting directory. Another good guide to CSS is <A HREF="http://www.richinstyle.com">richinstyle.com</A></DD>
+   <DD>Path to a <A HREF="http://www.w3.org/Style/CSS/">Cascading Style Sheet</A> relative to the starting directory of output directory if they are used. Another good guide to CSS is <A HREF="http://www.richinstyle.com">richinstyle.com</A>.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">CSSFILE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>Path to a CSS to be embedded into the HTML files with a &lt;STYLE&gt;-tag.</DD>
    <P></P>
    <DT><SPAN CLASS="name">PARENTDOC</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
    <DD>The link used when referring to the parent document. Only makes sense to use without recursing enabled. For instance, if you are on a IIS web server (shame on you) and want to link to ../default.asp instead of ../index.html you should use this option.</DD>
@@ -229,24 +291,52 @@
      </TR>
     </TABLE>
     <P></P>
-    Set one of these to nothing (empty quotes "") and it will not be printed. A note about INDEX. The image is also links back to the index.
+    Set one of these to nothing (empty quotes &quot;&quot;) and it will not be printed. A note about INDEX. The individual images also link back to the index.
    </DD>
+   <DT><SPAN CLASS="name">USETITLES</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Use the titles of the previous and next images instead of 'Prev' or 'Next'</DD>
    <P></P>
-   <DT><SPAN CLASS="name">TITLE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
-   <DD>Title of the index.</DD>
+   <DT><SPAN CLASS="name">EXIF</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Show EXIF information if it's available</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">WRITEALBUM</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Create a template <EM>album.xml</EM> in the thumbnail directory for you to fill in with titles, captions and rotation.<BR>This album.xml is read in when creating an index and is used to set the title of each image and album, set a caption for each image and album and also for setting a rotation to each image. If there exist Orientation information in the EXIF header it will be used. It can be overridden with the ROTATE-property in album.xml. To override and disable rotation set the ROTATE property to 360.</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">INDEXTITLE</SPAN>, <SPAN CLASS="name">INDEXHEADER</SPAN>, <SPAN CLASS="name">INDEXFOOTER</SPAN>, <SPAN CLASS="name">PICTURETITLE</SPAN>, <SPAN CLASS="name">PICTUREHEADER</SPAN>, <SPAN CLASS="name">PICTUREFOOTER</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>Format of the title (page title), header (above the thumbnails/pictures) and footer (below the thumbnails/pictures). It uses a printf-style syntax where % (percent) followed by a letter is substituted by a string or number.<BR><TABLE>
+   <TR><TH>%f</TH><TD>Current filename</TD></TR>
+   <TR><TH>%F</TH><TD>Current filename without extension</TD></TR>
+   <TR><TH>%y</TH><TD>Todays year</TD></TR>
+   <TR><TH>%m</TH><TD>Todays month</TD></TR>
+   <TR><TH>%d</TH><TD>Todays day of month</TD></TR>
+   <TR><TH>%Y</TH><TD>File's year</TD></TR>
+   <TR><TH>%M</TH><TD>File's month</TD></TR>
+   <TR><TH>%D</TH><TD>File's day of month</TD></TR>
+   <TR><TH>%p</TH><TD>Page number</TD></TR>
+   <TR><TH>%P</TH><TD>Number of pages</TD></TR>
+   <TR><TH>%t</TH><TD>Album title</TD></TR>
+   <TR><TH>%T</TH><TD>Picture title</TD></TR>
+   <TR><TH>%w</TH><TD>Picture width</TD></TR>
+   <TR><TH>%h</TH><TD>Picture height</TD></TR>
+   <TR><TH>%e</TH><TD>Date from EXIF header formated by libexif.</TD></TR>
+   <TR><TH>%%</TH><TD>% (a percent sign)</TD></TR>
+   </TABLE></DD>
+   <P></P>
+   <DT><SPAN CLASS="name">INDEAXHEADERFILE</SPAN>, <SPAN CLASS="name">INDEXFOOTERFILE</SPAN>, <SPAN CLASS="name">PICTUREHEADERFILE</SPAN>, <SPAN CLASS="name">PICTUREFOOTERFILE</SPAN> (<SPAN CLASS="type">STRING</SPAN>)</DT>
+   <DD>Embed the contents of the file at the corresponding place in the HTML-documents. No printf-substitution is made.</DD>
+   <P></P>
   </DL>
   <P></P>
   The best way to learn a program still is to experiment. It's also the perfect excuse for a developer to write poor documentation =).
   <H3>Future</H3>
   <UL>
-   <LI>Bugs?! You must be joking!
+   <LI>Bugs... <em>&quot;a dead bug is a good bug&quot;</em>
    <P></P>
-   <LI>I'm experimenting with some GUI (GTK+) programming and maybe I'll make a image organizer with the capabilities of <B>GFXIndex</B>.
-   <P></P>
-   <LI>Autoconf-ize. Please contribute.
-   <P></P>
-   <LI>Your sumbissions will be implemented if they are within my vision or if you're persuasive enough.
+   <LI>Your sumbissions will be implemented if they are within my vision and/or if you're persuasive enough.
   </UL>
+  <P></P>
+  <HR NOSHADE SIZE="1">
+  <SMALL>Updated for 2.0pre2. 2004-Feb-23</SMALL>
   </TD><TD BGCOLOR="#000000">&nbsp;</TD></TR></TABLE>
  </BODY>
 </HTML>

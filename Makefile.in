@@ -115,7 +115,7 @@ AUTOMAKE_OPTIONS = dist-bzip2 dist-zip
 
 SUBDIRS = src
 
-EXTRA_DIST = gfxindex.spec docs extras winbuild gfxindex.exe sources.txt
+EXTRA_DIST = gfxindex.spec docs extras winbuild gfxindex.exe sources.txt attic
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

@@ -4,9 +4,12 @@
  * linkage error with the rest */
 #include <popt.h>
 #include <string.h>
+#include <stdarg.h>
+
 #if HAVE_CONFIG_H
 #include <config.h>
 #endif
+
 char *basename( char *str )
 {
 	char *ptr=strrchr( str, '\\' );
@@ -28,4 +31,27 @@ char *libintl_dgettext (const char * domainname, const char * msgid)
 extern struct poptOption poptHelpOptions[];
 struct poptOption *_imp__poptHelpOptions=poptHelpOptions;
 #endif
+
+int myfprintf(FILE *stream, const char *format, ...)
+{
+	int ret=0;
+	va_list ap;
+	static char buf[1024*16]="";
+	int s;
+	va_start(ap,format);
+	vsprintf( buf, format, ap );
+	s=strlen( buf );
+	if( s )
+	{
+		while( --s )
+		{
+			if( buf[s]=='\\' ) buf[s]='/';
+		}
+		ret=fprintf( stream, buf );
+	}
+	va_end(ap);
+	return ret;
+}
+
+
 #endif

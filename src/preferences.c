@@ -39,7 +39,8 @@ void widths_sanity_check( ConfArgItem *ci, int **widthsp )
 ConfArgItem config_definition[]=
 {
 	{ "dir", CT_ARG_STR, 'd', CIA_CMDLINE, DEFAULT_DIR, "Starting directory", NULL },
-	{ "config", CT_ARG_BOOL, '\0', CIA_CMDLINE, (void *)( DEFAULT_CONFIG ), "Enable/disable the use of config files (rcfiles)", NULL },
+	{ "config", CT_ARG_STR, '\0', CIA_CMDLINE, (void *)( DEFAULT_CONFIG ), "Read options from file", NULL },
+	{ "saveconfig", CT_ARG_STR, '\0', CIA_CMDLINE, (void *)( DEFAULT_SAVECONFIG ), "Save options to file and quit", NULL },
 	{ "outdir", CT_ARG_STR, 'O', CIA_BOTH, DEFAULT_OUTDIR, "Output base directory", NULL },
 	{ "thumbdir", CT_ARG_STR, '\0', CIA_BOTH, DEFAULT_THUMBDIR, "The directory where the thumbnails will be put", NULL },
 	{ "quiet", CT_ARG_BOOL, 'q', CIA_BOTH, (void *)( DEFAULT_QUIET ), "Suspend all output to the console", NULL },

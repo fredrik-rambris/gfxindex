@@ -10,3 +10,6 @@ echo "Compiling program"
 echo "Compressing executable"
 upx --best -q -q -q gfxindex.exe || exit
 du -sm -h gfxindex.exe
+echo "Updating documentation"
+unix2dos -q -n COPYING COPYING.txt
+unix2dos -q -n ChangeLog ChangeLog.txt

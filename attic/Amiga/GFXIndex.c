@@ -1,3 +1,5 @@
+/* This sourcecode is release under the same License as the rest of GFXIndex. */
+
 #include <clib/alib_protos.h>
 #include <clib/dos_protos.h>
 #include <clib/utility_protos.h>

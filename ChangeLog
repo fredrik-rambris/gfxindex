@@ -1,3 +1,26 @@
+Mon Feb 23 22:59:46 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Updated the documentation
+
+* Enabled use of config files.
+
+* Updated the Windows installer
+  - Made the Windows installer create a default config file.
+
+  - Added a context menu item in the Windows installer. You now can right
+    click on a folder and choose "Create album with GFXIndex". The
+	gfxindex.ini created when installing is used.
+
+  - Added a finish page where the README can be brought up.
+
+  - Added this ChangeLog to the docs-dir and also moved COPYING there.
+	
+* Fixed a bug where the absolute path would be put into HTML when using --dir
+
+Thu Feb 12 11:38:17 2004  Fredrik Rambris  <fredrik@rambris.com>
+* After a report by Kent <kf@nortas.com> that when recursing in Windows
+  gfxindex outputs backslashes in the HTML. All HTML now runs through a
+  function (myfprintf) that replaces all backslashes with normal slashes.
+
 Sun Oct 05 01:16:35 2003  Fredrik Rambris  <fredrik@rambris.com>
 * Stylesheets can now be embedded into the documents.
 

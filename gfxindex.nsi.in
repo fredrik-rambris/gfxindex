@@ -26,7 +26,9 @@
   !define MUI_LICENSEPAGE
 ;  !define MUI_COMPONENTSPAGE
   !define MUI_DIRECTORYPAGE
-  
+  !define MUI_FINISHPAGE
+  !define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\docs\README.html"
+ 
   !define MUI_ABORTWARNING
   
   !define MUI_UNINSTALLER
@@ -46,7 +48,7 @@
 ;--------------------------------
 ;Data
   
-  LicenseData "COPYING.txt"
+  LicenseData "COPYING_short.txt"
 
 ;--------------------------------
 ;Installer Sections
@@ -58,7 +60,10 @@ Section "gfxindex.exe" SecCopyUI
   SetOutPath "$INSTDIR"
   File "gfxindex.exe"
   File /r "docs"
-  File "COPYING"
+  File /oname=docs/COPYING.txt "COPYING.txt"
+  File /oname=docs/ChangeLog.txt "ChangeLog.txt"
+
+  Exec 'gfxindex.exe --config=gfxindex.ini --saveconfig=gfxindex.ini'
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "DisplayName" "GFXindex"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "UninstallString" "$INSTDIR\Uninstall.exe"
@@ -70,6 +75,9 @@ Section "gfxindex.exe" SecCopyUI
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}" "NoRepair" 1
 
+  WriteRegStr HKCR "Directory\shell\gfxindex" "" "Create album with GFXIndex"
+  WriteRegStr HKCR "Directory\shell\gfxindex\command" "" '$INSTDIR\gfxindex.exe --config="$INSTDIR\gfxindex.ini" --dir="%L"'
+
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
@@ -77,7 +85,7 @@ SectionEnd
 
 ;Display the Finish header
 ;Insert this macro after the sections if you are not using a finish page
-!insertmacro MUI_SECTIONS_FINISHHEADER
+;!insertmacro MUI_SECTIONS_FINISHHEADER
 
 ;--------------------------------
 ;Descriptions
@@ -95,12 +103,13 @@ Section "Uninstall"
 
   Delete "$INSTDIR\gfxindex.exe"
   Delete "$INSTDIR\Uninstall.exe"
-  Delete "$INSTDIR\COPYING"
+  Delete "$INSTDIR\gfxindex.ini"
   RMDir /r "$INSTDIR\docs"
 
   RMDir "$INSTDIR"
 
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT}"
+  DeleteRegKey HKCR "Directory\shell\gfxindex"
 
   ;Display the Finish header
   !insertmacro MUI_UNFINISHHEADER

@@ -83,29 +83,24 @@ int main( int argc, char **argv )
 //	printioinfo();
 	if( !( global_confarg=confargs_new( config_definition, conf_check ) ) ) error( "Couldn't initalize preferences memory" );
 	if( !confargs_commandline( global_confarg, argc, argv ) ) error( "Couldn't parse command line" );
-	#if FALSE
-	strcpy( file, SYSCONFDIR );
-	tackon( file, "gfxindex.conf" );
-	if( file_exist( file ) ) confargs_load( global_confarg, file );
-	strcpy( file, "~" );
-	tackon( file, ".gfxindex.conf" );
-	if( file_exist( file ) ) confargs_load( global_confarg, file );
-	if( !confargs_commandline( global_confarg, argc, argv ) ) error( "Couldn't parse command line" );
-	/* I don't see an easy way of doing this right now so for now we just kill
-	   the confargs, start with a new and reparse the command line */
-	if( !BCONF(global_confarg,PREFS_CONFIG) ) /* If we're not to read from configfiles */
+	if( STR_ISSET(SCONF(global_confarg,PREFS_CONFIG) ) )
 	{
-		confargs_free( global_confarg ); /* Kill the confargs */
-		/* Set up a new one with the defaults */
-		if( !( global_confarg=confargs_new( config_definition, conf_check ) ) ) error( "Couldn't initalize preferences memory" );
-		/* And re-parse the command line */
-		if( !confargs_commandline( global_confarg, argc, argv ) ) error( "Couldn't parse command line" );
+		if( file_exist( SCONF(global_confarg,PREFS_CONFIG) ) )
+		{
+			confargs_load( global_confarg, SCONF(global_confarg,PREFS_CONFIG) );
+		}
 	}
-#endif
-	status( 1, global_confarg, "GFXindex v" VERSION " (c) 1999-2003 Fredrik Rambris. Built on " __DATE__ );
+	status( 1, global_confarg, "GFXindex v" VERSION " (c) 1999-2004 Fredrik Rambris. Built on " __DATE__ );
+	if( STR_ISSET(SCONF(global_confarg,PREFS_SAVECONFIG) ) )
+	{
+		confargs_save( global_confarg, SCONF(global_confarg,PREFS_SAVECONFIG) );
+		cleanup();
+		return 0;
+	}
+
 	traverse( SCONF(global_confarg,PREFS_DIR), 0, global_confarg, NULL );
 	cleanup();
-	return( 0 );
+	return 0;
 }
 
 /* A simple give a message and die */
@@ -750,6 +745,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 								if( ( pn=gfx_new0( struct PictureNode, 1 ) ) )
 								{
 									pn->pn_dir=setstr( pn->pn_dir, de->d_name );
+									
 									if( subdirthumb.p_path )
 									{
 										pn->pn_thumbnail.p_path=subdirthumb.p_path;
@@ -812,7 +808,15 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 									pn->pn_original.p_height=image.im_height;
 									if( !BCONF(cfg,PREFS_THUMBS) || !makethumbnail( path, outpath, cfg, col, &pn->pn_thumbnail, pn, &backgrounds ) )
 									{
-										pn->pn_original.p_path=strdup( strip_path( path, level ) );
+										/* This is used when --dir is used to strip of the path. Seems to work ok. */
+										int striplen=0;
+										if( STR_ISSET(SCONF(cfg,PREFS_DIR)) )
+										{
+											striplen=strlen( SCONF(cfg,PREFS_DIR) );
+											if( (SCONF(cfg,PREFS_DIR))[striplen-1]==PATH_DELIMITER ) striplen--;
+											striplen++;
+										}
+										pn->pn_original.p_path=strdup( strip_path( path+striplen, level ) );
 //										file=(char *)basename( path );
 										if( !pn->pn_title )
 										{
@@ -1053,41 +1057,41 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 					tprintf( tmpbuf, SCONF(local,PREFS_PICTURETITLE), pn, pict, local, page+1, numpages );
 				else
 					sprintf( tmpbuf, "%s%s%s ( %d x %d )", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", (pn->pn_title?pn->pn_title:pn->pn_original.p_path), pict->p_width, pict->p_height );
-				fprintf( thumbfile, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
+				myfprintf( thumbfile, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
 				if( STR_ISSET(SCONF(local,PREFS_CSS)) )
 				{
-					fprintf( thumbfile, "  <LINK REL=\"stylesheet\" HREF=\"" );
+					myfprintf( thumbfile, "  <LINK REL=\"stylesheet\" HREF=\"" );
 					for( count=0 ; count<=level ; count++ ) fprintf( thumbfile, "..%c", PATH_DELIMITER );
-					fprintf( thumbfile, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
+					myfprintf( thumbfile, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
 				}
 				if( css )
 				{
-					fprintf( thumbfile, "  <STYLE><!--\n" );
+					myfprintf( thumbfile, "  <STYLE><!--\n" );
 					for( count=0; count<css_numrows; count++ )
 					{
-						fprintf( thumbfile, "   %s\n", css[count] );
+						myfprintf( thumbfile, "   %s\n", css[count] );
 					}
-					fprintf( thumbfile, "  --></STYLE>\n" );
+					myfprintf( thumbfile, "  --></STYLE>\n" );
 				}
-				fprintf( thumbfile, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
+				myfprintf( thumbfile, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
 
-				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) fprintf( thumbfile, "  <DIV CLASS=\"header\">\n" );
+				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"header\">\n" );
 				if( pictureheader )
 				{
 					for( count=0; count<pictureheader_numrows; count++ )
 					{
 						tprintf( tmpbuf, pictureheader[count], pn, pict, local, page+1, numpages );
-						fprintf( thumbfile, "   %s\n", tmpbuf );
+						myfprintf( thumbfile, "   %s\n", tmpbuf );
 					}
 				}
 				if( STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) )
 				{
 					tprintf( tmpbuf, SCONF(local,PREFS_PICTUREHEADER), pn, pict, local, page+1, numpages );
-					fprintf( thumbfile, "   %s\n", tmpbuf );
+					myfprintf( thumbfile, "   %s\n", tmpbuf );
 				}
-				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) fprintf( thumbfile, "  </DIV>\n" );
+				if( pictureheader || STR_ISSET(SCONF(local,PREFS_PICTUREHEADER)) ) myfprintf( thumbfile, "  </DIV>\n" );
 
-				fprintf( thumbfile, "  <DIV CLASS=\"picture\" ALIGN=\"center\">\n" );
+				myfprintf( thumbfile, "  <DIV CLASS=\"picture\" ALIGN=\"center\">\n" );
 
 				if( numpics>1 ) navbar_new( thumbindex );
 				if( node->prev && !(((struct PictureNode *)(node->prev))->pn_dir) && ( STR_ISSET(SCONF(local,PREFS_PREV)) || ICONF(local,PREFS_NAVTHUMBS) || BCONF(local,PREFS_USETITLES) ) )
@@ -1130,45 +1134,45 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 
 
 				if( numpics>1 ) navbar_end( local, thumbindex );
-				if( numpics>1 ) fprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", thumbindex );
-//				fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, (STR_ISSET(SCONF(local,PREFS_OUTDIR))&&bpict>=0?pict->p_path+strlen(SCONF(local,PREFS_OUTDIR)):pict->p_path), pict->p_width, pict->p_height, pn->pn_title );
-				fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
-				if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(pn->pn_caption) ) fprintf( thumbfile, "   <BR><SPAN CLASS=\"caption\">%s</SPAN><BR>\n", pn->pn_caption );
+				if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", thumbindex );
+//				myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, (STR_ISSET(SCONF(local,PREFS_OUTDIR))&&bpict>=0?pict->p_path+strlen(SCONF(local,PREFS_OUTDIR)):pict->p_path), pict->p_width, pict->p_height, pn->pn_title );
+				myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
+				if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(pn->pn_caption) ) myfprintf( thumbfile, "   <BR><SPAN CLASS=\"caption\">%s</SPAN><BR>\n", pn->pn_caption );
 #if HAVE_LIBEXIF
 				if( pn->pn_exifinfo && BCONF(local,PREFS_EXIF) )
 				{
 					ExifInfo *ei=pn->pn_exifinfo;
-					fprintf( thumbfile, "   <TABLE CLASS=\"exif\">\n" );
-					if( STR_ISSET( ei->ei_date ) ) fprintf( thumbfile, "    <TR><TH>Taken</TH><TD>%s</TD></TR>\n", ei->ei_date );
-					if( STR_ISSET( ei->ei_make ) ) fprintf( thumbfile, "    <TR><TH>Make</TH><TD>%s</TD></TR>\n", ei->ei_make );
-					if( STR_ISSET( ei->ei_model ) ) fprintf( thumbfile, "    <TR><TH>Model</TH><TD>%s</TD></TR>\n", ei->ei_model );
-					if( STR_ISSET( ei->ei_exposure ) ) fprintf( thumbfile, "    <TR><TH>Exposure time</TH><TD>%s</TD></TR>\n", ei->ei_exposure );
-					if( STR_ISSET( ei->ei_aperture ) ) fprintf( thumbfile, "    <TR><TH>Aperture</TH><TD>%s</TD></TR>\n", ei->ei_aperture );
-					if( STR_ISSET( ei->ei_focal ) ) fprintf( thumbfile, "    <TR><TH>Focal length</TH><TD>%s</TD></TR>\n", ei->ei_focal );
-					fprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
-					fprintf( thumbfile, "   </TABLE>\n" );
+					myfprintf( thumbfile, "   <TABLE CLASS=\"exif\">\n" );
+					if( STR_ISSET( ei->ei_date ) ) myfprintf( thumbfile, "    <TR><TH>Taken</TH><TD>%s</TD></TR>\n", ei->ei_date );
+					if( STR_ISSET( ei->ei_make ) ) myfprintf( thumbfile, "    <TR><TH>Make</TH><TD>%s</TD></TR>\n", ei->ei_make );
+					if( STR_ISSET( ei->ei_model ) ) myfprintf( thumbfile, "    <TR><TH>Model</TH><TD>%s</TD></TR>\n", ei->ei_model );
+					if( STR_ISSET( ei->ei_exposure ) ) myfprintf( thumbfile, "    <TR><TH>Exposure time</TH><TD>%s</TD></TR>\n", ei->ei_exposure );
+					if( STR_ISSET( ei->ei_aperture ) ) myfprintf( thumbfile, "    <TR><TH>Aperture</TH><TD>%s</TD></TR>\n", ei->ei_aperture );
+					if( STR_ISSET( ei->ei_focal ) ) myfprintf( thumbfile, "    <TR><TH>Focal length</TH><TD>%s</TD></TR>\n", ei->ei_focal );
+					myfprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
+					myfprintf( thumbfile, "   </TABLE>\n" );
 				}
 #endif
-				if( numpics>1 ) fprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN>\n", thumbindex );
+				if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN>\n", thumbindex );
 				
-				fprintf( thumbfile, "  </DIV>\n\n" );
-				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) fprintf( thumbfile, "  <DIV CLASS=\"footer\">\n" );
+				myfprintf( thumbfile, "  </DIV>\n\n" );
+				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  <DIV CLASS=\"footer\">\n" );
 				if( picturefooter )
 				{
 					for( count=0; count<picturefooter_numrows; count++ )
 					{
 						tprintf( tmpbuf, picturefooter[count], pn, pict, local, page+1, numpages );
-						fprintf( thumbfile, "   %s\n", tmpbuf );
+						myfprintf( thumbfile, "   %s\n", tmpbuf );
 					}
 				}
 				if( STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) )
 				{
 					tprintf( tmpbuf, SCONF(local,PREFS_PICTUREFOOTER), pn, pict, local, page+1, numpages );
-					fprintf( thumbfile, "   %s\n", tmpbuf );
+					myfprintf( thumbfile, "   %s\n", tmpbuf );
 				}
-				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) fprintf( thumbfile, "  </DIV>\n" );
+				if( picturefooter || STR_ISSET(SCONF(local,PREFS_PICTUREFOOTER)) ) myfprintf( thumbfile, "  </DIV>\n" );
 
-				fprintf( thumbfile, " </BODY>\n</HTML>\n" );
+				myfprintf( thumbfile, " </BODY>\n</HTML>\n" );
 				fclose( thumbfile );
 				thumbfile=NULL;
 			}
@@ -1185,40 +1189,40 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				tprintf( tmpbuf, SCONF(local,PREFS_INDEXTITLE), pn, pict, local, page+1, numpages );
 			else
 				sprintf( tmpbuf, "%s%sPage %d / %d", STR_ISSET(SCONF(local,PREFS_TITLE))?SCONF(local,PREFS_TITLE):"", STR_ISSET(SCONF(local,PREFS_TITLE))?" - ":"", page+1, numpages );
-			fprintf( file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
+			myfprintf( file, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n<HTML>\n <HEAD>\n  <TITLE>%s</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXindex v" VERSION " by Fredrik Rambris (http://fredrik.rambris.com)\">\n", tmpbuf );
 			if( STR_ISSET(SCONF(local,PREFS_CSS)) )
 			{
 
-				fprintf( file, "  <LINK REL=\"stylesheet\" HREF=\"" );
-				for( count=0 ; count<level ; count ++ ) fprintf( file, "..%c", PATH_DELIMITER );
-				fprintf( file, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
+				myfprintf( file, "  <LINK REL=\"stylesheet\" HREF=\"" );
+				for( count=0 ; count<level ; count ++ ) myfprintf( file, "..%c", PATH_DELIMITER );
+				myfprintf( file, "%s\" TYPE=\"text/css\">\n", SCONF(local,PREFS_CSS) );
 			}
 			if( css )
 			{
-				fprintf( file, "  <STYLE><!--\n" );
+				myfprintf( file, "  <STYLE><!--\n" );
 				for( count=0; count<css_numrows; count++ )
 				{
-					fprintf( file, "   %s\n", css[count] );
+					myfprintf( file, "   %s\n", css[count] );
 				}
-				fprintf( file, "  --></STYLE>\n" );
+				myfprintf( file, "  --></STYLE>\n" );
 			}
-			fprintf( file, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
-			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) fprintf( file, "  <DIV CLASS=\"header\">\n" );
+			myfprintf( file, " </HEAD>\n <BODY%s%s>\n", STR_ISSET(SCONF(local,PREFS_BODYARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_BODYARGS))?SCONF(local,PREFS_BODYARGS):"" );
+			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  <DIV CLASS=\"header\">\n" );
 			if( indexheader )
 			{
 				for( count=0; count<indexheader_numrows; count++ )
 				{
 					tprintf( tmpbuf, indexheader[count], pn, pict, local, page+1, numpages );
-					fprintf( file, "   %s\n", tmpbuf );
+					myfprintf( file, "   %s\n", tmpbuf );
 				}
 			}
 			if( STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) )
 			{
 				tprintf( tmpbuf, SCONF(local,PREFS_INDEXHEADER), pn, pict, local, page+1, numpages );
-				fprintf( file, "   %s\n", tmpbuf );
+				myfprintf( file, "   %s\n", tmpbuf );
 			}
-			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) fprintf( file, "  </DIV>\n" );
-			fprintf( file, "  <DIV CLASS=\"thumbnails\" ALIGN=\"center\">\n" );
+			if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  </DIV>\n" );
+			myfprintf( file, "  <DIV CLASS=\"thumbnails\" ALIGN=\"center\">\n" );
 			index[0]='\0';
 			if( numpages>1 || (STR_ISSET(SCONF(local,PREFS_PARENT)) && STR_ISSET(SCONF(local,PREFS_PARENTDOC))) ) navbar_new( index );
 			if( numpages>1 )
@@ -1245,16 +1249,16 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			if( strlen( index ) )
 			{
 				navbar_end( local, index );
-				fprintf( file, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", index );
+				myfprintf( file, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", index );
 			}
 											
-			fprintf( file, "   <TABLE%s%s>\n", (STR_ISSET(SCONF(local,PREFS_TABLEARGS))?" ":""), (STR_ISSET(SCONF(local,PREFS_TABLEARGS))?SCONF(local,PREFS_TABLEARGS):"") );
+			myfprintf( file, "   <TABLE%s%s>\n", (STR_ISSET(SCONF(local,PREFS_TABLEARGS))?" ":""), (STR_ISSET(SCONF(local,PREFS_TABLEARGS))?SCONF(local,PREFS_TABLEARGS):"") );
 		}
-		if( xcount==0 ) fprintf( file, "     <TR>\n" );
+		if( xcount==0 ) myfprintf( file, "     <TR>\n" );
 		space[0]='\0';
 		if( pn->pn_dir )
 		{
-			fprintf( file, "<TD CLASS=\"subdir\"%s%s><A HREF=\"%s/index.html\">", STR_ISSET(SCONF(local,PREFS_CELLARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_CELLARGS))?SCONF(local,PREFS_CELLARGS):"", pn->pn_dir );
+			myfprintf( file, "<TD CLASS=\"subdir\"%s%s><A HREF=\"%s/index.html\">", STR_ISSET(SCONF(local,PREFS_CELLARGS))?" ":"", STR_ISSET(SCONF(local,PREFS_CELLARGS))?SCONF(local,PREFS_CELLARGS):"", pn->pn_dir );
 			if( pn->pn_thumbnail.p_path && !BCONF(local,PREFS_PAD) && BCONF(local,PREFS_SOFTPAD) )
 			{
 				hspace=0;
@@ -1269,11 +1273,11 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				}
 				if( hspace ) sprintf( space, " HSPACE=\"%d\"", hspace );
 				if( vspace ) sprintf( space+strlen( space ), " VSPACE=\"%d\"", vspace );
-				fprintf( file, "<IMG SRC=\"%s/%s\" ALT=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>", pn->pn_dir, pn->pn_thumbnail.p_path, pn->pn_dir, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space );
-				if( BCONF(local,PREFS_TITLES) ) fprintf( file, "<BR>%s (dir)", pn->pn_dir );
+				myfprintf( file, "<IMG SRC=\"%s/%s\" ALT=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>", pn->pn_dir, pn->pn_thumbnail.p_path, pn->pn_dir, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space );
+				if( BCONF(local,PREFS_TITLES) ) myfprintf( file, "<BR>%s (dir)", pn->pn_dir );
 			}
-			else fprintf( file, "%s", pn->pn_dir );
-			fprintf( file, "</A></TD>" );
+			else myfprintf( file, "%s", pn->pn_dir );
+			myfprintf( file, "</A></TD>" );
 		}
 		else
 		{
@@ -1293,7 +1297,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				if( vspace ) sprintf( space+strlen( space ), " VSPACE=\"%d\"", vspace );
 			}
 
-			fprintf( file, "     <TD%s%s>", SCONF(local,PREFS_CELLARGS)?" ":"", SCONF(local,PREFS_CELLARGS)?SCONF(local,PREFS_CELLARGS):"" );
+			myfprintf( file, "     <TD%s%s>", SCONF(local,PREFS_CELLARGS)?" ":"", SCONF(local,PREFS_CELLARGS)?SCONF(local,PREFS_CELLARGS):"" );
 
 			if( ICONF(local,PREFS_DEFWIDTH) && pn->pn_pictures && pn->pn_pictures[numdefault]->p_path ) pict=pn->pn_pictures[numdefault];
 			else if( pn->pn_pictures && pn->pn_pictures[0]->p_path ) pict=pn->pn_pictures[0];
@@ -1303,13 +1307,13 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			{
 				strcpy( path, SCONF(local,PREFS_THUMBDIR) );
 				tackon( path, (char *)basename( pict->p_path ) );
-				fprintf( file, "<A HREF=\"%s.html\">", path );
+				myfprintf( file, "<A HREF=\"%s.html\">", path );
 			}
-			fprintf( file, "<IMG ALT=\"%s\" SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>%s%s", pn->pn_title, pn->pn_thumbnail.p_path, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space, BCONF(local,PREFS_TITLES)?"<BR>":"", BCONF(local,PREFS_TITLES)?pn->pn_title:"" );
-			if( pict ) fprintf( file, "</A>" );
+			myfprintf( file, "<IMG ALT=\"%s\" SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>%s%s", pn->pn_title, pn->pn_thumbnail.p_path, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space, BCONF(local,PREFS_TITLES)?"<BR>":"", BCONF(local,PREFS_TITLES)?pn->pn_title:"" );
+			if( pict ) myfprintf( file, "</A>" );
 			if( (pn->pn_pictures && numscaled>1) || ( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) ) )
 			{
-				fprintf( file, "<BR><SPAN CLASS=\"sizes\">" );
+				myfprintf( file, "<BR><SPAN CLASS=\"sizes\">" );
 				hspace=0;
 				for( bpict=-1; bpict<numscaled; bpict++ )
 				{
@@ -1317,7 +1321,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 					{
 						strcpy( path, SCONF(local,PREFS_THUMBDIR) );
 						tackon( path, (char *)basename( pn->pn_original.p_path ) );
-						fprintf( file, "<A HREF=\"%s.html\">%d</A>", path, MAX(pn->pn_original.p_width,pn->pn_original.p_height) );
+						myfprintf( file, "<A HREF=\"%s.html\">%d</A>", path, MAX(pn->pn_original.p_width,pn->pn_original.p_height) );
 						hspace=1;
 					}
 					else if( numscaled && bpict>=0 )
@@ -1328,31 +1332,31 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
  segfaultar vid nästa rad... VARFÖR?!
  */
 						tackon( path, (char *)basename( pn->pn_pictures[bpict]->p_path ) );
-						if( hspace ) fprintf( file, " " );
-						fprintf( file, "<A HREF=\"%s.html\">%d</A>", path, size[bpict] );
+						if( hspace ) myfprintf( file, " " );
+						myfprintf( file, "<A HREF=\"%s.html\">%d</A>", path, size[bpict] );
 						hspace=1;
 					}
 				}
-				fprintf( file, "</SPAN>" );
+				myfprintf( file, "</SPAN>" );
 			}
-			fprintf( file, "</TD>\n" );
+			myfprintf( file, "</TD>\n" );
 		}
 		xcount++;
 		if( xcount>=ICONF(local,PREFS_NUMX) )
 		{
 			xcount=0;
 			ycount++;
-			fprintf( file, "    </TR>\n" );
+			myfprintf( file, "    </TR>\n" );
 		}
 		if( ycount>=ICONF(local,PREFS_NUMY) )
 		{
 			ycount=0;
 			page++;
-			fprintf( file, "   </TABLE>\n" );
-			if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(SCONF(local,PREFS_CAPTION)) ) fprintf( file, "   <BR><SPAN CLASS=\"caption\">%s</SPAN>\n", SCONF(local,PREFS_CAPTION) );
-			if( strlen( index ) ) fprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
+			myfprintf( file, "   </TABLE>\n" );
+			if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(SCONF(local,PREFS_CAPTION)) ) myfprintf( file, "   <BR><SPAN CLASS=\"caption\">%s</SPAN>\n", SCONF(local,PREFS_CAPTION) );
+			if( strlen( index ) ) myfprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
 
-			fprintf( file, "  </DIV>\n" );
+			myfprintf( file, "  </DIV>\n" );
 
 			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  <DIV CLASS=\"footer\">\n" );
 			if( indexfooter )
@@ -1360,43 +1364,43 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 				for( count=0; count<indexfooter_numrows; count++ )
 				{
 					tprintf( tmpbuf, indexfooter[count], pn, pict, local, page+1, numpages );
-					fprintf( file, "   %s\n", tmpbuf );
+					myfprintf( file, "   %s\n", tmpbuf );
 				}
 			}
 			if( STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) )
 			{
 				tprintf( tmpbuf, SCONF(local,PREFS_INDEXFOOTER), pn, pict, local, page+1, numpages );
-				fprintf( file, "   %s\n", tmpbuf );
+				myfprintf( file, "   %s\n", tmpbuf );
 			}
-			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  </DIV>\n" );
+			if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
 
-			fprintf( file, " </BODY>\n</HTML>\n" );
+			myfprintf( file, " </BODY>\n</HTML>\n" );
 			fclose( file );
 			file=NULL;
 		}
 	}
 	if( file )
 	{
-		fprintf( file, "    </TR>\n   </TABLE>\n" );
-		if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(SCONF(local,PREFS_CAPTION)) ) fprintf( file, "   <BR><SPAN CLASS=\"caption\">%s</SPAN>\n", SCONF(local,PREFS_CAPTION) );
-		if( strlen( index ) ) fprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
-		fprintf( file, "  </DIV>\n" );
-		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  <DIV CLASS=\"footer\">\n" );
+		myfprintf( file, "    </TR>\n   </TABLE>\n" );
+		if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(SCONF(local,PREFS_CAPTION)) ) myfprintf( file, "   <BR><SPAN CLASS=\"caption\">%s</SPAN>\n", SCONF(local,PREFS_CAPTION) );
+		if( strlen( index ) ) myfprintf( file, "    <SPAN CLASS=\"navbar\">%s</SPAN>\n", index ); 
+		myfprintf( file, "  </DIV>\n" );
+		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  <DIV CLASS=\"footer\">\n" );
 		if( indexfooter )
 		{
 			for( count=0; count<indexfooter_numrows; count++ )
 			{
 				tprintf( tmpbuf, indexfooter[count], pn, pict, local, page+1, numpages );
-				fprintf( file, "   %s\n", tmpbuf );
+				myfprintf( file, "   %s\n", tmpbuf );
 			}
 		}
 		if( STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) )
 		{
 			tprintf( tmpbuf, SCONF(local,PREFS_INDEXFOOTER), pn, pict, local, page+1, numpages );
-			fprintf( file, "   %s\n", tmpbuf );
+			myfprintf( file, "   %s\n", tmpbuf );
 		}
-		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) fprintf( file, "  </DIV>\n" );
-		fprintf( file, " </BODY>\n</HTML>\n" );
+		if( indexfooter || STR_ISSET(SCONF(local,PREFS_INDEXFOOTER)) ) myfprintf( file, "  </DIV>\n" );
+		myfprintf( file, " </BODY>\n</HTML>\n" );
 		fclose( file );
 		file=NULL;
 	}

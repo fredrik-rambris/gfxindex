@@ -21,6 +21,7 @@ extern ConfArgItem config_definition[];
 enum {
 	PREFS_DIR,
 	PREFS_CONFIG,
+	PREFS_SAVECONFIG,
 	PREFS_OUTDIR,
 	PREFS_THUMBDIR,
 	PREFS_QUIET,

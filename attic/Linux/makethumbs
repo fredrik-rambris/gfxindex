@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# CONFIG
+THUMBSIZE=96
+THUMBDIR="thumbnails/"
+DBFILE="$THUMBDIR/files.db"
+
+while [ $# -gt 0 ]
+do
+    case "$1" in
+	"-size" )
+	    THUMBSIZE="$2"
+	    shift
+	;;
+	"-background"
+	    BACKGROUND="$2"
+	    shift
+	;;
+	"-bgcolor"
+	    BGCOLOR="$2"
+	    shift
+	;;
+    esac
+    shift
+done
+
+echo "THUMBSIZE=$THUMBSIZE"
+
+exit
+
+# INIT
+if [ ! -e $THUMBDIR ] ; then
+mkdir $THUMBDIR
+fi
+
+touch "$DBFILE"
+
+
+for file in *
+do
+thumbfile=$THUMBDIR${file%.*}.jpg
+if [ ! -e "$thumbfile" ] ; then
+
+info=$( anytopnm "$file" 2>/dev/null | pnmfile 2>/dev/null )
+if [ "$info" ] ; then
+echo -ne "Creating thumbnail for $file...                               \r" 
+
+xsize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $1 }' )
+ysize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $3 }' )         
+
+anytopnm "$file" | pnmscale -xysize $THUMBSIZE $THUMBSIZE >temp.pnm 
+
+info=$( pnmfile temp.pnm )
+thumbxsize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $1 }' )
+thumbysize=$( echo "$info" | awk -F"," '{ print $2 }' | awk '{ print $3 }' )
+
+addleft=$(( (THUMBSIZE-thumbxsize ) / 2 ))
+addright=$(( THUMBSIZE - thumbxsize - addleft  ))
+addtop=$(( (THUMBSIZE-thumbysize ) / 2 )) 
+addbottom=$(( THUMBSIZE - thumbysize - addtop ))
+
+
+if [ $BACKGROUND ] ; then
+    anytopnm "$BACKGROUND" | pnmcomp -xoff $addleft -yoff $addtop temp.pnm | cjpeg -quality 75 -optimize -progressive -smooth 10 -outfile "$thumbfile"
+else
+    pnmpad -black -l$addleft -r$addright -t$addtop -b$addbottom temp.pnm | cjpeg -quality 75 -optimize -progressive -smooth 10 -outfile "$thumbfile"
+fi
+rm -f temp.pnm
+
+
+# Remove possible old entries in files.db
+grep -v "$file" "$DBFILE" >"$DBFILE.new"
+
+echo "$file;$xsize;$ysize;$thumbfile;$THUMBSIZE;$THUMBSIZE" >>"$DBFILE.new"
+sort "$DBFILE.new" >"$DBFILE"
+rm -f "$DBFILE.new"
+fi
+
+fi
+
+done
+
+echo

@@ -460,7 +460,7 @@ void gfx_mix( struct image *brush, struct image *img, int offx, int offy )
 /* Convinience function for scaling and stacking an image onto another */
 void gfx_stack( struct image *brush, struct image *img )
 {
-	struct image *middle=NULL;
+//	struct image *middle=NULL;
 	if( !brush || !img ) return;
 	if( brush->im_width==img->im_width && brush->im_height==img->im_height )
 	{

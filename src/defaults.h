@@ -27,7 +27,11 @@
 #endif
 
 #ifndef DEFAULT_CONFIG
-	#define DEFAULT_CONFIG TRUE
+	#define DEFAULT_CONFIG (NULL)
+#endif
+
+#ifndef DEFAULT_SAVECONFIG
+	#define DEFAULT_SAVECONFIG (NULL)
 #endif
 
 #ifndef DEFAULT_QUIET

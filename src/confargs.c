@@ -208,12 +208,15 @@ BOOL confargs_load( ConfArg *ca, char *filename )
 
 	if( !( (ca) && (filename) ) ) return( FALSE );
 
+#ifndef __WIN32__
 	if( !strncmp( filename, "~/", 2 ) )
 	{
 		strcpy( (char *)path, (char *)getenv( "HOME" ) );
 		strcat( (char *)path, (char *)(filename+1) );
 	}
-	else strcpy( (char *)path, (char *)filename );
+	else
+#endif
+		strcpy( (char *)path, (char *)filename );
 	
 	if( fastcompare( filename, "stdin" ) ) fp=stdin;
 	else if( fastcompare( filename, "-" ) ) fp=stdin;
@@ -273,7 +276,7 @@ BOOL confargs_load( ConfArg *ca, char *filename )
 	}
 	if( ca->sanity_check ) ca->sanity_check( ca );
 	if( fp!=stdin ) fclose( fp );
-	return( ret );
+	return ret;
 }
 
 /* Save values to file */
@@ -292,17 +295,20 @@ BOOL confargs_save( ConfArg *ca, char *filename )
 	char path[1024];
 	if( !( (ca) && (filename) ) ) return( ret );
 
+#ifndef __WIN32__
 	if( !strncmp( filename, "~/", 2 ) )
 	{
 		strcpy( (char *)path, (char *)getenv( "HOME" ) );
 		strcat( (char *)path, (char *)(filename+1) );
 	}
-	else strcpy( (char *)path, (char *)filename );
+	else
+#endif
+		strcpy( (char *)path, (char *)filename );
 
 	if( fastcompare( filename, "stdout" ) ) fp=stdout;
 	else if( fastcompare( filename, "-" ) ) fp=stdout;
 	else if( !( ( fp=fopen( path, "w" ) ) ) ) return( FALSE );
-	fprintf( fp, "// GFXIndex configuration file.\n\n" );
+	fprintf( fp, "// GFXIndex configuration file.%s%s", EOL, EOL );
 	for( number=0 ; ca->ca_items[number].ci_type ; number++ )
 	{
 		if( ca->ca_items[number].ci_avail & CIA_CONFIG )
@@ -312,27 +318,27 @@ BOOL confargs_save( ConfArg *ca, char *filename )
 				case CT_ARG_BOOL:
 					/* If the value is the same as default then comment it out */
 					if( ca->ca_items[number].ci_default==ca->ca_values[number] ) fprintf( fp, "// " );
-					fprintf( fp, "%s = %s // %s: %s. Default: %s\n", ca->ca_items[number].ci_name, (ca->ca_values[number]?"Yes":"No"), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (ca->ca_items[number].ci_default?"Yes":"No") );
+					fprintf( fp, "%s = %s // %s: %s. Default: %s%s", ca->ca_items[number].ci_name, (ca->ca_values[number]?"Yes":"No"), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (ca->ca_items[number].ci_default?"Yes":"No"), EOL );
 					break;
 
 				case CT_ARG_INT:
 					if( ca->ca_items[number].ci_default==ca->ca_values[number] ) fprintf( fp, "// " );
-					fprintf( fp, "%s = %d // %s: %s. Default: %d\n", ca->ca_items[number].ci_name, (int)( ca->ca_values[number] ), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (int)( ca->ca_items[number].ci_default ) );
+					fprintf( fp, "%s = %d // %s: %s. Default: %d%s", ca->ca_items[number].ci_name, (int)( ca->ca_values[number] ), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (int)( ca->ca_items[number].ci_default ), EOL );
 					break;
 
 				case CT_ARG_STR:
 					if( fastcompare( ca->ca_items[number].ci_default, ca->ca_values[number] ) ) fprintf( fp, "// " );
-					fprintf( fp, "%s = %s // %s: %s. Default: %s\n", ca->ca_items[number].ci_name, (ca->ca_values[number]?(char *)ca->ca_values[number]:""), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (ca->ca_items[number].ci_default?(char *)ca->ca_items[number].ci_default:"") );
+					fprintf( fp, "%s = %s // %s: %s. Default: %s%s", ca->ca_items[number].ci_name, (ca->ca_values[number]?(char *)ca->ca_values[number]:""), types[ca->ca_items[number].ci_type], ca->ca_items[number].ci_description, (ca->ca_items[number].ci_default?(char *)ca->ca_items[number].ci_default:""), EOL );
 					break;
 				default:
 					break;
 			}
 		}
 	}
-	fprintf( fp, "\n// End of file\n" );
+	fprintf( fp, "%s// End of file%s", EOL, EOL );
 	ret=TRUE;
 	if( fp!=stdout ) fclose( fp );
-	return( ret );
+	return ret;
 }
 
 /* Use popt to take options from command line */

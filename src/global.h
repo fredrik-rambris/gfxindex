@@ -24,18 +24,6 @@
 #include "preferences.h"
 #include <taglist.h>
 
-
-/*
-struct ThumbData
-{
-	char *image;
-	guint imagewidth, imageheight;
-	char *thumb;
-	guint thumbwidth, thumbheight;
-	char *extra;
-};
-*/
-
 #ifndef TRUE
 #define TRUE (1)
 #endif
@@ -52,11 +40,14 @@ struct ThumbData
 #define MIN(a,b) ((a<b)?a:b)
 #endif
 
+#include "win32.h"
+
 #ifdef __WIN32__
 	#define PATH_DELIMITER '\\'
-	#include "win32.h"
+	#define EOL "\r\n"
 #else
 	#define PATH_DELIMITER '/'
+	#define EOL "\n"
 #endif
 
 #endif /* GLOBAL_H */
