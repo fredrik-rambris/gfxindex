@@ -1,5 +1,8 @@
-Fredrik Rambris <fredrik.rambris@amiga.nu>
+Fredrik Rambris <fredrik@rambris.com>
 	Main coder. Have done the most.
 
 Adam Sleight <adams@linearcorp.com>
 	Beta tester. A load of suggestions have come from Adam. Great, man!
+
+Ondrejicka Stefan <ondrej@idata.sk>
+	Helped with autoconf and automake.

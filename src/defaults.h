@@ -92,7 +92,7 @@
 #endif
 
 #ifndef DEFAULT_BODYARGS
-	#define DEFAULT_BODYARGS NULL
+	#define DEFAULT_BODYARGS (char *)NULL
 #endif
 
 #ifndef DEFAULT_CELLARGS
@@ -100,11 +100,11 @@
 #endif
 
 #ifndef DEFAULT_CSS
-	#define DEFAULT_CSS NULL
+	#define DEFAULT_CSS (char *)NULL
 #endif
 
 #ifndef DEFAULT_PARENTDOC
-	#define DEFAULT_PARENTDOC NULL
+	#define DEFAULT_PARENTDOC (char *)NULL
 #endif
 
 #ifndef DEFAULT_STR_LEFT

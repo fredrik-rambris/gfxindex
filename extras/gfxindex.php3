@@ -1,6 +1,6 @@
 <?php
 /*
- * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik.rambris@amiga.nu>. All rights reserved.
+ * GFXIndex (c) 1999-2000 Fredrik Rambris <fredrik@rambris.com>. All rights reserved.
  *
  * GFXIndex is a script that let you browse your images.
  *
@@ -66,7 +66,7 @@
 			echo "<HTML>\n";
 			echo " <HEAD>\n";
 			echo "  <TITLE>" . ( $TITLE?"$TITLE - ":"" ) . "$td[0] - " . ( $show+1 ) . " / " . ( $numpics ) . "</TITLE>\n";
-			echo "  <META NAME=\"generator\" CONTENT=\"GFXIndex v$VERSION (PHP) by Fredrik Rambris (fredrik.rambris@amiga.nu)\">\n";
+			echo "  <META NAME=\"generator\" CONTENT=\"GFXIndex v$VERSION (PHP) by Fredrik Rambris (fredrik@rambris.com)\">\n";
 			echo " </HEAD>\n";
 			echo " <BODY BGCOLOR=\"#$bgcolor\">\n";
 			echo "  <DIV ALIGN=\"center\">\n";
@@ -82,7 +82,7 @@
 
 			echo "   <IMG SRC=\"$td[0]\" WIDTH=\"$td[1]\" HEIGHT=\"$td[2]\">\n";
 			echo "   <HR>\n";
-			echo "   <FONT SIZE=\"-1\">Created using GFXIndex v$VERSION (PHP) by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></FONT>\n";
+			echo "   <FONT SIZE=\"-1\">Created using GFXIndex v$VERSION (PHP) by <A HREF=\"mailto:fredrik@rambris.com\">Fredrik Rambris</A></FONT>\n";
 			echo "  </DIV>\n";
 			echo " </BODY>\n";
 			echo "</HTML>\n";
@@ -96,7 +96,7 @@
 	echo "<HTML>\n";
 	echo " <HEAD>\n";
 	echo "  <TITLE>" . ( $TITLE?"$TITLE - ":"" ) . "Page " . ( $page+1 ) . " / " . ( $numpages ) . "</TITLE>\n";
-	echo "  <META NAME=\"generator\" CONTENT=\"GFXIndex v$VERSION (PHP) by Fredrik Rambris (fredrik.rambris@amiga.nu)\">\n";
+	echo "  <META NAME=\"generator\" CONTENT=\"GFXIndex v$VERSION (PHP) by Fredrik Rambris (fredrik@rambris.com)\">\n";
 	echo " </HEAD>\n";
 	echo " <BODY BGCOLOR=\"#$bgcolor\">\n";
 	echo "  <FONT FACE=\"Helvetica,Arial,Swiss\">\n";
@@ -142,7 +142,7 @@
 	if( $xcount>0 ) echo "     </TR>\n";
 	echo "    </TABLE>\n";
 	echo "    <HR>\n";
-	echo "    <FONT SIZE=\"-1\">Created using GFXIndex v$VERSION (PHP) by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></FONT>\n";
+	echo "    <FONT SIZE=\"-1\">Created using GFXIndex v$VERSION (PHP) by <A HREF=\"mailto:fredrik@rambris.com\">Fredrik Rambris</A></FONT>\n";
 	echo "   </DIV>\n";
 	echo "  </FONT>\n";
 	echo " </BODY>\n";

@@ -21,11 +21,11 @@
  *
  */
 
-#define VERSION "1.1"
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <dirent.h>
 #include <stdio.h>
@@ -34,7 +34,11 @@
 #include <gdk_imlib.h>
 #include <popt.h>
 
-#include "config.h"
+#include "defaults.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 struct ThumbData
 {
@@ -78,7 +82,7 @@ struct ProcessInfo
 
 char *stripws( char *str );
 void readconf( gchar *filename, struct Global *cfg );
-gint handleargs( gint argc, gchar **argv, struct Global *cfg );
+gint handleargs( int argc, char **argv, struct Global *cfg );
 void free_empties( struct Global *cfg );
 void cleanup( struct Global *cfg );
 struct Global *dupconf( struct Global *cfg );
@@ -102,10 +106,11 @@ GList *removenode( GList *thumbs, gchar *imagename );
 struct ThumbData *findnode( GList *thumbs, gchar *imagename );
 gboolean file_exist( gchar *filename );
 
-gint main( gint argc, gchar **argv )
+gint main( int argc, char **argv )
 {
 	gdk_init( &argc, &argv );
 	gdk_imlib_init();
+
 	if( !( global=g_new0( struct Global, 1 ) ) ) error( "Couldn't allocate memory" );
 	setglobaldefaults();
 	readconf( "/etc/gfxindex", global );
@@ -119,7 +124,7 @@ gint main( gint argc, gchar **argv )
 	return( 0 );
 }
 
-gint handleargs( gint argc, gchar **argv, struct Global *cfg )
+gint handleargs( int argc, char **argv, struct Global *cfg )
 {
 	gchar c;
 	GString *tempstr=g_string_new( NULL );
@@ -190,7 +195,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 		{ NULL, 0, 0, NULL, 0 }
 	};
 
-	optCon = poptGetContext( NULL, argc, argv, optionsTable, 0 );
+	optCon = poptGetContext( NULL, argc, (const char **)argv, optionsTable, 0 );
 	poptSetOtherOptionHelp( optCon, "<title>" );
 
 	/* Now do options processing, get portname */
@@ -202,7 +207,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				cfg->quiet=TRUE;
 				break;
 			case 'Q':
-				cfg->quality=atoi( (char *)poptGetOptArg( optCon ) );
+				cfg->quality=(gint)atoi( (char *)poptGetOptArg( optCon ) );
 				if( cfg->quality > 100 ) cfg->quality=100;
 				if( cfg->quality < 0 ) cfg->quality=0;
 				cfg->quality=(guint)((gfloat)cfg->quality*2.559);
@@ -223,7 +228,8 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 #endif
 				break;
 			case 'c':
-				cfg->bgcolor=setstr( cfg->bgcolor, strlen(poptGetOptArg( optCon ))?poptGetOptArg( optCon ):NULL );
+				if( strlen( poptGetOptArg( optCon ) ) ) cfg->bgcolor=setstr( cfg->bgcolor, (char *)poptGetOptArg( optCon ) );
+				else cfg->bgcolor=setstr( cfg->bgcolor, NULL );
 				break;
 			case 'b':
 #if DEFAULT_BEVEL
@@ -328,9 +334,9 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				printf( "Make thumbnails? %s\n", DEFAULT_MAKETHUMBS?"Yes":"No" );
 				printf( "Show credits     %s\n", DEFAULT_SHOWCREDITS?"Yes":"No" );
 				printf( "pad              %s\n", DEFAULT_PAD?"Yes":"No" );
-				printf( "thumbwidth       %ld\n", DEFAULT_THUMBWIDTH );
-				printf( "thumbheight      %ld\n", DEFAULT_THUMBHEIGHT );
-				printf( "quality          %ld\n", DEFAULT_QUALITY );
+				printf( "thumbwidth       %d\n", DEFAULT_THUMBWIDTH );
+				printf( "thumbheight      %d\n", DEFAULT_THUMBHEIGHT );
+				printf( "quality          %d\n", DEFAULT_QUALITY );
 				printf( "thumbbgcolor     %s\n", DEFAULT_BGCOLOR );
 				printf( "thumbbevel       %s\n", DEFAULT_BEVEL?"Yes":"No" );
 				printf( "bevelbg          %s\n", DEFAULT_BEVELBACK );
@@ -338,9 +344,9 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				printf( "beveldark        %s\n", DEFAULT_BEVELDARK );
 				printf( "Create indexes?  %s\n", DEFAULT_GENINDEX?"Yes":"No" );
 				printf( "Show filenames?  %s\n", DEFAULT_TITLES?"Yes":"No" );
-				printf( "Use NavThumbs?   %s (%ld %%)\n", DEFAULT_THUMBSCALE?"Yes":"No", DEFAULT_THUMBSCALE );
-				printf( "numx             %ld\n", DEFAULT_XSTOP );
-				printf( "numy             %ld\n", DEFAULT_YSTOP );
+				printf( "Use NavThumbs?   %s (%d %%)\n", DEFAULT_THUMBSCALE?"Yes":"No", DEFAULT_THUMBSCALE );
+				printf( "numx             %d\n", DEFAULT_XSTOP );
+				printf( "numy             %d\n", DEFAULT_YSTOP );
 				printf( "bodyargs         %s\n", DEFAULT_BODYARGS );
 				printf( "cellargs         %s\n", DEFAULT_CELLARGS );
 				printf( "css              %s\n", DEFAULT_CSS );
@@ -348,7 +354,7 @@ gint handleargs( gint argc, gchar **argv, struct Global *cfg )
 				break;
 		}
 	}
-      	cfg->title=setstr( cfg->title, poptGetArg( optCon ) );
+      	cfg->title=setstr( cfg->title, (char *)poptGetArg( optCon ) );
 
 	if (c < -1)
 	{
@@ -440,17 +446,17 @@ void readconf( gchar *filename, struct Global *cfg  )
 		{ NULL, 0, NULL }
 	};
 
-	if( fp=fopen( filename, "r" ) )
+	if( ( fp=fopen( filename, "r" ) ) )
 	{
 		while( fgets( buf, 1023, fp ) )
 		{
 			/* First strip off comments */
-			if( s=strstr( buf, "//" ) )
+			if( ( s=strstr( buf, "//" ) ) )
 			{
 				s[0]='\0';
 			}
 			/* Strip of whitespaces */
-			if( s=strchr( buf, '=' ) )
+			if( ( s=strchr( buf, '=' ) ) )
 			{
 				s[0]='\0';
 				s++;
@@ -477,7 +483,7 @@ void readconf( gchar *filename, struct Global *cfg  )
 						}
 						else if( confargs[count].argtype==CA_ARG_BOOL )
 						{
-							if( a=strchr( answers, s[0] ) )
+							if( ( a=strchr( answers, s[0] ) ) )
 							{
 								*(gboolean *)confargs[count].arg=((((gint)(a-answers))%2)==1);
 							}
@@ -648,9 +654,9 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 	{
 		GdkColor col[3]=
 		{
-			0, 0x0000, 0x0000, 0x0000, /* black */
-			0, 0xffff, 0xffff, 0xffff, /* White */
-			0, 0x0000, 0x0000, 0x0000  /* Black */
+			{ 0, 0x0000, 0x0000, 0x0000 }, /* black */
+			{ 0, 0xffff, 0xffff, 0xffff }, /* White */
+			{ 0, 0x0000, 0x0000, 0x0000 }  /* Black */
 		};
 
 		if( !( pi=g_new0( struct ProcessInfo, 1 ) ) )
@@ -685,7 +691,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 
 	slash=(dir[strlen(dir)-1]!='/');
 	thumbslash=(local->thumbdir[strlen(local->thumbdir)-1]!='/');
-	if( dirhandle=opendir( dir ) )
+	if( ( dirhandle=opendir( dir ) ) )
 	{
 		/* First we see to it that the thumbdir exist */
 		g_string_sprintf( thumbpath, "%s%s%s", dir, slash?"/":"", local->thumbdir );
@@ -695,7 +701,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 		g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local->thumbdir, thumbslash?"/":"", "files.db" );
 		if( !local->overwrite ) thumbs=loadthumblist( thumbs, thumbpath->str );
 
-		while( de=readdir( dirhandle ) )
+		while( ( de=readdir( dirhandle ) ) )
 		{
 			/* Skip entries with leading dot */
 			if( de->d_name[0]!='.' )
@@ -716,7 +722,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 							g_string_sprintf( thumbpath, "%s%s%s%s%s", dir, slash?"/":"", local->thumbdir, thumbslash?"/":"", de->d_name );
 
 							/* Replace the extension with jpg */
-							if( str=strrchr( thumbpath->str, '.' ) )
+							if( ( str=strrchr( thumbpath->str, '.' ) ) )
 							{
 								g_string_truncate( thumbpath, str-thumbpath->str+1 );
 								g_string_append( thumbpath, "jpg" );
@@ -741,7 +747,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 								}
 
 								/* Then we load the original image */
-								if( pi->im=gdk_imlib_load_image( path->str ) )
+								if( ( pi->im=gdk_imlib_load_image( path->str ) ) )
 								{
 									if( !local->quiet )
 									{
@@ -791,7 +797,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 									str=thumbpath->str;
 									str+=strlen( dir );
 									if( slash ) str++;
-									if( td=findnode( thumbs, de->d_name ) )
+									if( ( td=findnode( thumbs, de->d_name ) ) )
 									{
 										td->imagewidth=pi->im->rgb_width;
 										td->imageheight=pi->im->rgb_height;
@@ -800,7 +806,7 @@ void makethumbs( gchar *dir, struct ProcessInfo *processinfo, gint level, struct
 										td->image=setstr( NULL, de->d_name );
 										td->thumb=setstr( NULL, str );
 									}
-									else if( td=g_new0( struct ThumbData, 1 ) )
+									else if( ( td=g_new0( struct ThumbData, 1 ) ) )
 									{
 										td->imagewidth=pi->im->rgb_width;
 										td->imageheight=pi->im->rgb_height;
@@ -851,7 +857,8 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 	GString *path=g_string_new(NULL);
 	GString *index=g_string_new(NULL);
 	GString *thumbindex=g_string_new(NULL);
-	gboolean slash=(dir[strlen(dir)-1]!='/'), thumbslash=(local->thumbdir[strlen(local->thumbdir)-1]!='/');
+	gboolean slash=(dir[strlen(dir)-1]!='/');
+	//, thumbslash=(local->thumbdir[strlen(local->thumbdir)-1]!='/');
 	guint numpages=numpics/ppp;
 	FILE *file=NULL, *thumbfile=NULL;
 	struct ThumbData *td;
@@ -864,7 +871,7 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 		g_string_sprintf( path, "%s%s%s.html", dir, slash?"/":"", td->thumb );
 		if( !( thumbfile=fopen( path->str, "w" ) ) ) goto error;
 		g_string_sprintf( path, "../%s", indexstr( page ) );
-		fprintf( thumbfile, "<HTML>\n <HEAD>\n  <TITLE>%s%s%s ( %ld x %ld )</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " by Fredrik Rambris (fredrik.rambris@amiga.nu)\">\n", local->title?local->title:"", local->title?" - ":"", td->image, td->imagewidth, td->imageheight );
+		fprintf( thumbfile, "<HTML>\n <HEAD>\n  <TITLE>%s%s%s ( %d x %d )</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " by Fredrik Rambris (fredrik@rambris.com)\">\n", local->title?local->title:"", local->title?" - ":"", td->image, td->imagewidth, td->imageheight );
 		if( local->css )
 		{
 			fprintf( thumbfile, "  <LINK REL=\"stylesheet\" HREF=\"" );
@@ -880,7 +887,7 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 
 			if( local->thumbscale )
 			{
-				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->prev->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->prev->data)->thumbheight*local->thumbscale/100), local->previous );
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->prev->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->prev->data)->thumbheight*local->thumbscale/100), local->previous );
 			}
 			else
 			{
@@ -895,7 +902,7 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 
 			if( local->thumbscale )
 			{
-				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->next->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->next->data)->thumbheight*local->thumbscale/100), local->next );
+				navbar_add( local, thumbindex, "<A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" ALT=\"%s\" BORDER=\"0\"></A>", tmpstr, tmpstr, (long)(((struct ThumbData *)node->next->data)->thumbwidth*local->thumbscale/100), (long)(((struct ThumbData *)node->next->data)->thumbheight*local->thumbscale/100), local->next );
 			}
 			else
 			{
@@ -904,20 +911,19 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 		}
 		if( numpics>1 ) navbar_end( local, thumbindex );
 		if( numpics>1 ) fprintf( thumbfile, "   <SPAN ID=\"navbar\">%s</SPAN><BR>\n", thumbindex->str );
-		fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" BORDER=\"0\" VSPACE=\"2\"></A><BR>\n", path->str, td->image, td->imagewidth, td->imageheight );
+		fprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\"></A><BR>\n", path->str, td->image, td->imagewidth, td->imageheight );
 		if( numpics>1 ) fprintf( thumbfile, "   <SPAN ID=\"navbar\">%s</SPAN>\n", thumbindex->str );
-		if( local->showcredits ) fprintf( thumbfile, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://boost.linux.kz/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></SPAN>\n" );
+		if( local->showcredits ) fprintf( thumbfile, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://fredrik.rambris.com/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik@rambris.com\">Fredrik Rambris</A></SPAN>\n" );
 		fprintf( thumbfile, "  </DIV>\n </BODY>\n</HTML>\n" );
 		fclose( thumbfile );
 		thumbfile=NULL;
 		if( ycount+xcount==0 )
-
 		{
 			ycount=0;
 			xcount=0;
 			g_string_sprintf( path, "%s%s%s", dir, slash?"/":"", indexstr( page ) );
 			if( !( file=fopen( path->str, "w" ) ) ) goto error;
-			fprintf( file, "<HTML>\n <HEAD>\n  <TITLE>%s%sPage %ld / %ld</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " by Fredrik Rambris (fredrik.rambris@amiga.nu)\">\n", local->title?local->title:"", local->title?" - ":"", page+1, numpages );
+			fprintf( file, "<HTML>\n <HEAD>\n  <TITLE>%s%sPage %d / %d</TITLE>\n  <META NAME=\"generator\" CONTENT=\"GFXIndex v" VERSION " by Fredrik Rambris (fredrik@rambris.com)\">\n", local->title?local->title:"", local->title?" - ":"", page+1, numpages );
 			if( local->css )
 			{
 				fprintf( file, "  <LINK REL=\"stylesheet\" HREF=\"" );
@@ -925,32 +931,38 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 				fprintf( file, "%s\" TYPE=\"text/css\">\n", local->css );
 			}
 			fprintf( file, " </HEAD>\n <BODY%s%s>\n  <DIV ALIGN=\"center\">\n",  local->bodyargs?" ":"", local->bodyargs?local->bodyargs:"" );
-
+			g_string_truncate( index, 0 );
+			if( numpages>1 || (local->parent && local->parentdoc) ) navbar_new( index );
 			if( numpages>1 )
 			{
-				navbar_new( index );
 				if( page>0 && local->previous ) navbar_add( local, index, "<A HREF=\"%s\">%s</A>", indexstr( page-1 ), local->previous );
-
-				if( local->parent && local->parentdoc ) navbar_add( local, index, "<A HREF=\"%s\">%s</A>", local->parentdoc, local->parent );
+			}
+			if( local->parent && local->parentdoc ) navbar_add( local, index, "<A HREF=\"%s\">%s</A>", local->parentdoc, local->parent );
+			if( numpages>1 )
+			{	
 				if( local->numlink )
 				{
 					for( count=0 ; count<numpages ; count++ )
 					{
 						if( count!=page ) navbar_add( local, index, "<A HREF=\"%s\">", indexstr( count ) );
 						else navbar_add( local, index, "<SPAN ID=\"current\">" );
-						g_string_sprintfa( index, "%ld", count+1 );
+						g_string_sprintfa( index, "%d", count+1 );
 						if( count!=page ) g_string_sprintfa( index, "</A>" );
 						else g_string_sprintfa( index, "</SPAN>" );
 					}
 				}
 				if( page<(numpages-1) && local->next ) navbar_add( local, index, "<A HREF=\"%s\">%s</A>", indexstr( page+1 ), local->next );
+			}
+			if( strlen( index->str ) )
+			{
 				navbar_end( local, index );
 				fprintf( file, "   <SPAN ID=\"navbar\">%s</SPAN><BR>\n", index->str );
-			} else g_string_truncate( index, 0 );
+			}
+											
 			fprintf( file, "   <TABLE BORDER=\"0\" CELLPADDING=\"2\" CELLSPACING=\"0\">\n" );
 		}
 		if( xcount==0 ) fprintf( file, "     <TR>\n" );
-		fprintf( file, "     <TD%s%s><A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%ld\" HEIGHT=\"%ld\" BORDER=\"0\">%s%s</A></TD>\n", local->cellargs?" ":"", local->cellargs?local->cellargs:"", td->thumb, td->thumb, td->thumbwidth, td->thumbheight, local->titles?"<BR>":"", local->titles?td->image:"" );
+		fprintf( file, "     <TD%s%s><A HREF=\"%s.html\"><IMG SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\">%s%s</A></TD>\n", local->cellargs?" ":"", local->cellargs?local->cellargs:"", td->thumb, td->thumb, td->thumbwidth, td->thumbheight, local->titles?"<BR>":"", local->titles?td->image:"" );
 		xcount++;
 		if( xcount>=local->xstop )
 		{
@@ -963,8 +975,8 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 			ycount=0;
 			page++;
 			fprintf( file, "   </TABLE>\n" );
-			if( numpages>1 ) fprintf( file, "    <SPAN ID=\"navbar\">%s</SPAN>\n", index->str ); 
-			if( local->showcredits ) fprintf( file, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://boost.linux.kz/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></SPAN>\n" );
+			if( strlen( index->str ) ) fprintf( file, "    <SPAN ID=\"navbar\">%s</SPAN>\n", index->str ); 
+			if( local->showcredits ) fprintf( file, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://fredrik.rambris.com/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik@rambris.com\">Fredrik Rambris</A></SPAN>\n" );
 			fprintf( file, "  </DIV>\n </BODY>\n</HTML>\n" );
 			fclose( file );
 			file=NULL;
@@ -973,8 +985,8 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 	if( file )
 	{
 		fprintf( file, "    </TR>\n   </TABLE>\n" );
-		if( numpages>1 ) fprintf( file, "    <SPAN ID=\"navbar\">%s</SPAN>\n", index->str ); 
-		if( local->showcredits ) fprintf( file, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://boost.linux.kz/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik.rambris@amiga.nu\">Fredrik Rambris</A></SPAN>\n" );
+		if( strlen( index->str ) ) fprintf( file, "    <SPAN ID=\"navbar\">%s</SPAN>\n", index->str ); 
+		if( local->showcredits ) fprintf( file, "   <HR>\n   <SPAN ID=\"credits\">Created using <A HREF=\"http://fredrik.rambris.com/gfxindex/\">GFXIndex</A> v" VERSION " by <A HREF=\"mailto:fredrik@rambris.com\">Fredrik Rambris</A></SPAN>\n" );
 		fprintf( file, "  </DIV>\n </BODY>\n</HTML>\n" );
 		fclose( file );
 		file=NULL;
@@ -990,7 +1002,7 @@ void gfxindex( struct Global *local, gchar *dir, GList *thumbs, gint level )
 gchar *indexstr( int number )
 {
 	static gchar buf[20];
-	if( number>0 ) sprintf( buf, "index%ld.html", number );
+	if( number>0 ) sprintf( buf, "index%d.html", number );
 	else sprintf( buf, "index.html" );
 	return( buf );
 }
@@ -1030,7 +1042,7 @@ gchar *setstr( gchar *old, gchar *new )
 
 	if( new )
 	{
-		if( old=(gchar *)g_malloc( strlen( new )+1 ) )
+		if( ( old=(gchar *)g_malloc( strlen( new )+1 ) ) )
 		{
 			strcpy( old, new );
 		}
@@ -1074,12 +1086,12 @@ void savethumblist( GList *thumbs, gchar *file )
 	FILE *fp;
 	struct ThumbData *td;
 	if( !thumbs || !file ) return;
-	if( fp=fopen( file, "w+" ) )
+	if( ( fp=fopen( file, "w+" ) ) )
 	{
 		for( ; thumbs ; thumbs=thumbs->next )
 		{
 			td=(struct ThumbData *)thumbs->data;
-			fprintf( fp, "%s;%ld;%ld;%s;%ld;%ld%s%s\n", td->image, td->imagewidth, td->imageheight, td->thumb, td->thumbwidth, td->thumbheight, td->extra?";":"", td->extra?td->extra:"" );
+			fprintf( fp, "%s;%d;%d;%s;%d;%d%s%s\n", td->image, td->imagewidth, td->imageheight, td->thumb, td->thumbwidth, td->thumbheight, td->extra?";":"", td->extra?td->extra:"" );
 		}
 		fclose( fp );
 	}
@@ -1093,14 +1105,14 @@ GList *loadthumblist( GList *thumbs, gchar *file )
 	gchar **line;
 	if( !file ) return( thumbs );
 	if( !file_exist( file ) ) return( thumbs );
-	if( fp=fopen( file, "r" ) )
+	if( ( fp=fopen( file, "r" ) ) )
 	{
 		while( fgets( buf, 1023, fp ) )
 		{
 			g_strstrip( buf );
-			if( line=g_strsplit( buf, ";", 6 ) )
+			if( ( line=g_strsplit( buf, ";", 6 ) ) )
 			{
-				if( td=g_new0( struct ThumbData, 1 ) )
+				if( ( td=g_new0( struct ThumbData, 1 ) ) )
 				{
 					td->image=setstr( NULL, line[0] );
 					td->thumb=setstr( NULL, line[3] );

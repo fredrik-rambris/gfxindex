@@ -1,0 +1,61 @@
+AC_INIT(src/gfxindex.c)
+AM_CONFIG_HEADER(config.h)
+
+VERSION=1.2
+AC_SUBST(VERSION)
+
+PACKAGE=gfxindex
+AC_SUBST(PACKAGE)
+
+AC_PREFIX_DEFAULT(/usr/local)
+
+AM_INIT_AUTOMAKE($PACKAGE, "$VERSION")
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_STDC_HEADERS
+AC_ARG_PROGRAM
+
+
+if eval "test x$GCC = xyes"; then
+  if eval "! echo $CFLAGS | grep \\-Wall" > /dev/null 2> /dev/null; then
+    CFLAGS="$CFLAGS -Wall"
+  fi
+
+  if eval "test x$enable_ansi = xyes"; then
+    if eval "! echo $CFLAGS | grep \\-ansi" > /dev/null 2> /dev/null; then
+      CFLAGS="$CFLAGS -ansi"
+    fi
+
+    if eval "! echo $CFLAGS | grep \\-pedantic" > /dev/null 2> /dev/null; then
+      CFLAGS="$CFLAGS -pedantic"
+    fi
+  fi
+fi
+
+AC_CHECK_PROG(IMLIB_CONFIG, imlib-config, "yes", "no")
+if eval "test x$IMLIB_CONFIG = xyes"; then
+	IMLIB_LIBS=`imlib-config --libs-gdk`
+	AC_MSG_RESULT("	gdk_imlib LDFLAGS=$IMLIB_LIBS")
+	IMLIB_CFLAGS=`imlib-config --cflags-gdk`
+	AC_MSG_RESULT("	gdk_imlib CFLAGS=$IMLIB_CFLAGS")
+else
+	AC_MSG_ERROR("Unable to find required imlib-config program!")
+fi
+
+AC_CHECK_LIB(popt, poptGetContext, LIBS="$LIBS -lpopt", AC_MSG_ERROR("Missing required popt library!"))
+
+# AC_CHECK_LIB(jpeg, jpeg_start_decompress, LIBS="$LIBS -ljpeg", AC_MSG_ERROR("Missing required jpeg library!"))
+
+CFLAGS="$CFLAGS $IMLIB_CFLAGS"
+LIBS="$LIBS $LDFLAGS $IMLIB_LIBS"
+
+AC_SUBST(CFLAGS)
+AC_SUBST(LIBS)
+
+AC_OUTPUT([
+Makefile
+src/Makefile
+gfxindex.spec
+])
