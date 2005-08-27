@@ -32,6 +32,7 @@
 #endif
 #include "global.h"
 #include "io_jpeg.h"
+#include "io_dcraw.h"
 #include "gfxio.h"
 #include "gfx.h"
 #include "exif.h"
@@ -43,6 +44,13 @@
 struct Backgrounds
 {
 	struct image *thumbbackground, *thumbalpha;
+};
+
+List traverse_stack;
+struct traverse_node
+{
+	Node node;
+	ConfArg *config;
 };
 
 int traverse( char *dir, int level, ConfArg *confg, struct Picture *dirthumb );
@@ -97,7 +105,7 @@ int main( int argc, char **argv )
 		cleanup();
 		return 0;
 	}
-
+	memset( (void *)&traverse_stack, 0, sizeof( List ) );
 	traverse( SCONF(global_confarg,PREFS_DIR), 0, global_confarg, NULL );
 	cleanup();
 	return 0;
@@ -134,6 +142,7 @@ void cleanup( void )
 {
 	gfxio_cleanup();
 	confargs_free( global_confarg );
+	list_free( &traverse_stack, FALSE );
 }
 
 void tprintf( char *buf, char *fmt, struct PictureNode *pn, struct Picture *pict, ConfArg *cfg, int page, int numpages )
@@ -143,10 +152,10 @@ void tprintf( char *buf, char *fmt, struct PictureNode *pn, struct Picture *pict
 	char tmp[1024], *ptr;
 	struct tm ftm, ctm, *tm;
 	time_t timep;
+	struct stat statbuf;
 	time( &timep );
 	if( ( tm=localtime( &timep ) ) )
 		memcpy( &ctm, tm, sizeof( struct tm ) );
-	struct stat statbuf;
 	if( pn && pn->pn_original.p_path )
 	{
 		if( !stat( pn->pn_original.p_path, &statbuf ) )
@@ -235,15 +244,21 @@ void tprintf( char *buf, char *fmt, struct PictureNode *pn, struct Picture *pict
 					in+=2;
 					break;
 				case 't': /* Page title */
-					ret=sprintf( out, "%s", SCONF(cfg,PREFS_TITLE) );
-					out+=ret;
-					out[0]='\0';
+					if( STR_ISSET( SCONF(cfg,PREFS_TITLE) ) )
+					{
+						ret=sprintf( out, "%s", SCONF(cfg,PREFS_TITLE) );
+						out+=ret;
+						out[0]='\0';
+					}
 					in+=2;
 					break;
 				case 'T': /* Picture title */
-					ret=sprintf( out, "%s", pn->pn_title );
-					out+=ret;
-					out[0]='\0';
+					if( STR_ISSET( pn->pn_title ) )
+					{
+						ret=sprintf( out, "%s", pn->pn_title );
+						out+=ret;
+						out[0]='\0';
+					}
 					in+=2;
 					break;
 				case 'w': /* Picture width */
@@ -264,7 +279,6 @@ void tprintf( char *buf, char *fmt, struct PictureNode *pn, struct Picture *pict
 					}
 					in+=2;
 					break;
-#if HAVE_LIBEXIF
 				case 'e': /* Exif date */
 					if( pn && pn->pn_exifinfo && pn->pn_exifinfo->ei_date )
 					{
@@ -274,7 +288,6 @@ void tprintf( char *buf, char *fmt, struct PictureNode *pn, struct Picture *pict
 					}
 					in+=2;
 					break;
-#endif
 				default:
 					out[0]=in[0];
 					in++;
@@ -296,9 +309,7 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 {
 	struct image *im=NULL, *thumb=NULL, info;
 	int w, h;
-#ifdef HAVE_LIBJPEG
-	int scale=1;
-#endif
+	int scale=1; /* GFXIO_JPEG_SCALE and DCRAW_HALFSIZE */
 	double factor;
 	char *destfile;
 	char *ptr;
@@ -306,9 +317,21 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 	int *size;
 	int num;
 	struct Picture **pict;
-	if( !imagefile || !destdir || !cfg ) return 1;
-	if( !CONF(cfg,PREFS_WIDTHS) ) return 1;
-	if( !BCONF(cfg,PREFS_FLAT ) ) return 1;
+	if( !imagefile || !destdir || !cfg )
+	{
+		return 1;
+	}
+	if( !CONF(cfg,PREFS_WIDTHS) )
+	{
+		return 1;
+	}
+
+	if( BCONF(cfg,PREFS_FLAT ) && !STR_ISSET(SCONF(cfg,PREFS_OUTDIR)) )
+	{
+		printf( "Flat filestructire and no outdir doesn't mix\n" );
+		return 1;
+	}
+
 	size=(int *)CONF(cfg,PREFS_WIDTHS);
 	num=arrlen( size );
 	if( pn->pn_pictures )
@@ -326,27 +349,40 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 	if( ! (pn->pn_pictures=gfx_new0( struct Picture *, num+1 ) ) ) return 1;
 	pict=pn->pn_pictures;
 	status( 3, cfg, "Loading image..." );
-#ifdef HAVE_LIBJPEG
 	if( gfx_getinfo( imagefile, &info, TAG_DONE )==ERR_OK )
 	{
-		for( scale=8;scale>1;scale/=2 )
+		if( info.im_loadmodule==GFXIO_JPEG )
 		{
+			for( scale=8;scale>1;scale/=2 )
+			{
+				if( info.im_width>info.im_height )
+				{
+					if( (*size)<=(info.im_width/scale) ) break;
+				}
+				else
+				{
+					if( (*size)<=(info.im_height/scale) ) break;
+				}
+			}
+			status( 3, cfg, "Using a JPEG load scale of 1:%d", scale );
+		}
+		else if( info.im_loadmodule==GFXIO_DCRAW )
+		{
+			scale=2;
 			if( info.im_width>info.im_height )
 			{
-				if( (*size)<=(info.im_width/scale) ) break;
+				if( (*size)<=(info.im_width/scale) ) scale=1;
 			}
 			else
 			{
-				if( (*size)<=(info.im_height/scale) ) break;
+				if( (*size)<=(info.im_height/scale) ) scale=1;
 			}
+			if( scale==2 ) scale=0;
 		}
 	}
-	status( 3, cfg, "Using a load scale of 1:%d", scale );
-#endif
 	if( ( im=gfx_load( imagefile, NULL,
-#ifdef HAVE_LIBJPEG
 		GFXIO_JPEG_SCALE, scale,
-#endif
+		GFXIO_DCRAW_HALFSIZE, scale,
 		TAG_DONE ) ) )
 	{
 		if( pn->pn_rotate )
@@ -358,8 +394,10 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 			while( *size )
 			{
 				strcpy( destfile, destdir );
-				tackon( destfile, SCONF(cfg,PREFS_THUMBDIR) );
+				if( !BCONF(cfg,PREFS_FLAT ) )
+					tackon( destfile, SCONF(cfg,PREFS_THUMBDIR) );
 				tackon( destfile, (char *)basename( imagefile ) );
+
 				if( ( ptr=strrchr( destfile, '.' ) ) )
 				{
 					sprintf( ptr, "_%d.jpg", *size );
@@ -386,9 +424,7 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 					{
 						status( 3, cfg, "Saving image '%s'...", destfile );
 						gfx_save( destfile, im, 0,
-#ifdef HAVE_LIBJPEG
 							GFXIO_JPEG_QUALITY, ICONF(cfg,PREFS_QUALITY),
-#endif
 							TAG_DONE );
 					}
 					else
@@ -399,9 +435,7 @@ int scaleoriginal( char *imagefile, char *destdir, ConfArg *cfg, struct PictureN
 							gfx_scaleimage( im, 0,0, im->im_width, im->im_height, thumb, 0, 0, thumb->im_width, thumb->im_height, ICONF(cfg,PREFS_SCALE), FALSE );
 							status( 3, cfg, "Saving image '%s'...", destfile );
 							gfx_save( destfile, thumb,
-#ifdef HAVE_LIBJPEG
 								GFXIO_JPEG_QUALITY, ICONF(cfg,PREFS_BIGQUALITY),
-#endif
 								TAG_DONE );
 							gfx_freeimage( im, FALSE );
 							im=thumb;
@@ -433,9 +467,7 @@ int makethumbnail( char *imagefile, char *destdir, ConfArg *cfg, struct color *c
 {
 	struct image *im=NULL, *thumb=NULL;
 	struct image info={NULL, 0, 0 };
-#ifdef HAVE_LIBJPEG
-	int scale=1;
-#endif
+	int scale=1; /* JPEG Load Scale and DCRWAW_HALFSIZE */
 	char *thumbfile=NULL, *str=NULL, *path;
 	int w, h, x1, y1, x2, y2;
 	double factor;
@@ -479,20 +511,27 @@ int makethumbnail( char *imagefile, char *destdir, ConfArg *cfg, struct color *c
 	{
 		status( 1, cfg, "Creating thumbnail for '%s'...", imagefile );
 		status( 2, cfg, "Loading imagefile" );
-#ifdef HAVE_LIBJPEG
 		if( gfx_getinfo( imagefile, &info, TAG_DONE )==ERR_OK )
 		{
-			for( scale=8;scale>1;scale/=2 )
+			if( info.im_loadmodule==GFXIO_JPEG )
 			{
-				if( ICONF(cfg,PREFS_THUMBWIDTH)<(info.im_width/scale) && ICONF(cfg,PREFS_THUMBHEIGHT)<(info.im_height/scale) ) break;
+				for( scale=8;scale>1;scale/=2 )
+				{
+					if( ICONF(cfg,PREFS_THUMBWIDTH)<(info.im_width/scale) && ICONF(cfg,PREFS_THUMBHEIGHT)<(info.im_height/scale) ) break;
+				}
+				status( 3, cfg, "Using a load scale of 1:%d", scale );
+			}
+			else if( info.im_loadmodule==GFXIO_DCRAW )
+			{
+				scale=2;
+				if( ICONF(cfg,PREFS_THUMBWIDTH)<(info.im_width/scale) && ICONF(cfg,PREFS_THUMBHEIGHT)<(info.im_height/scale) ) scale=1;
+				else scale=0;
+				status( 3, cfg, "Half-size loading is %sabled", (scale?"en":"dis") );
 			}
 		}
-		status( 3, cfg, "Using a load scale of 1:%d", scale );
-#endif
 		if( ( im=gfx_load( imagefile, NULL,
-#ifdef HAVE_LIBJPEG
 						GFXIO_JPEG_SCALE, scale,
-#endif
+						GFXIO_DCRAW_HALFSIZE, scale,
 						TAG_DONE ) ) )
 		{
 			if( pn->pn_rotate )
@@ -577,9 +616,7 @@ int makethumbnail( char *imagefile, char *destdir, ConfArg *cfg, struct color *c
 				picture->p_path=setstr( picture->p_path, path );
 				status( 2, cfg, "Saving image" );
 				gfx_save( thumbfile, thumb,
-#ifdef HAVE_LIBJPEG
 					GFXIO_JPEG_QUALITY, ICONF(cfg,PREFS_QUALITY),
-#endif
 					TAG_DONE );
 
 				gfx_freeimage( thumb, FALSE );
@@ -638,6 +675,8 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 		{ 0xff, 0xff, 0xff, 0xff }, /* Light bevel */
 		{ 0xff, 0xff, 0xff, 0xff }  /* Dark bevel */
 	};
+	struct traverse_node *travnode=NULL;
+
 	cfg=confargs_copy( config );
 
 	/* Read config etc etc*/
@@ -698,7 +737,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 		outfile=outpath+strlen( outpath )-1;
 		outfile[0]='\0';
 		free( SCONF(cfg,PREFS_OUTDIR) );
-		SCONF(cfg,PREFS_OUTDIR)=outpath;
+		CONF(cfg,PREFS_OUTDIR)=outpath;
 	}
 	else outpath=dir;
 	
@@ -754,12 +793,14 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 								strncpy( outfile, de->d_name, 1023 );
 							}
 							status( 2, cfg, "Entering directory '%s'", path );
+							travnode=gfx_new( struct traverse_node, 1 );
+							travnode->config=cfg;
+							list_append( &traverse_stack, (Node *)travnode );
 							duseful=traverse( path, level+1, cfg, &subdirthumb );
 							useful+=duseful;
 							status( 2, cfg, "Leaving directory %s (%d)", path, duseful );
 							if( duseful )
 							{
-
 								if( ( pn=gfx_new0( struct PictureNode, 1 ) ) )
 								{
 									pn->pn_dir=setstr( pn->pn_dir, de->d_name );
@@ -777,6 +818,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 								}
 
 							}
+							list_delete( &traverse_stack, traverse_stack.tail );
 							if( subdirthumb.p_path )
 							{
 								free( subdirthumb.p_path );
@@ -799,8 +841,8 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 								}
 							}
 						}
-
-						apn=get_picturenode( album, path );
+						
+						apn=get_picturenode( album, file );
 						if( apn && apn->pn_skip )
 						{
 							status( 2, cfg, "Skipping '%s'", path );
@@ -813,6 +855,7 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 								useful++;
 								if( ( pn=gfx_new0( struct PictureNode, 1 ) ) )
 								{
+									pn->pn_loadmodule=image.im_loadmodule;
 									if( apn )
 									{
 										pn->pn_title=apn->pn_title;
@@ -822,17 +865,26 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 										pn->pn_rotate=apn->pn_rotate;
 									}
 #if HAVE_LIBEXIF
-									status( 3, cfg, "Getting EXIF data if any" );
-									if( ( pn->pn_exifinfo=gfx_exif_file( path ) ) )
+									if( pn->pn_loadmodule==GFXIO_JPEG )
 									{
-										/* If we haven't yet set a rotation and there is one in EXIF then use it.
-										   Make sure your EXIF orientation is correct if you can set it. Otherwise set
-										   rotation in album.xml to 360. That should do the trick. */
-										if( !pn->pn_rotate && pn->pn_exifinfo->ei_rotate )
+										status( 3, cfg, "Getting EXIF data if any" );
+										if( ( pn->pn_exifinfo=gfx_exif_file( path ) ) )
 										{
-											pn->pn_rotate=pn->pn_exifinfo->ei_rotate;
-											status( 3, cfg, "Using rotation information from EXIF (%d degrees)", pn->pn_rotate );
+											/* If we haven't yet set a rotation and there is one in EXIF then use it.
+											   Make sure your EXIF orientation is correct if you can set it. Otherwise set
+											   rotation in album.xml to 360. That should do the trick. */
+											if( !pn->pn_rotate && pn->pn_exifinfo->ei_rotate )
+											{
+												pn->pn_rotate=pn->pn_exifinfo->ei_rotate;
+												status( 3, cfg, "Using rotation information from EXIF (%d degrees)", pn->pn_rotate );
+											}
 										}
+									}
+#endif
+#ifdef USE_DCRAW
+									if( pn->pn_loadmodule==GFXIO_DCRAW )
+									{
+										pn->pn_exifinfo=dcraw_getexif( path );
 									}
 #endif
 									pn->pn_original.p_width=image.im_width;
@@ -927,6 +979,14 @@ int traverse( char *dir, int level, ConfArg *config, struct Picture *dirthumb )
 					file[0]='\0';
 				}
 			}
+			else if( STR_ISSET(SCONF(cfg,PREFS_OUTDIR)) )
+			{
+				tackon( outfile, "gfxindex.xml" );
+				status( 2, cfg, "Writing cache to '%s'", outpath );
+				writeThumbData( cfg, &thumbdata, outpath );
+				outfile[0]='\0';				
+			}
+
 			if( BCONF(cfg,PREFS_WRITEALBUM) )
 			{
 				file[0]='\0';
@@ -964,7 +1024,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 {
 	int numpics=list_length( thumbs );
 	int ppp=ICONF(local,PREFS_NUMX) * ICONF(local,PREFS_NUMY);
-	int xcount=0, ycount=0, page=0, count;
+	int xcount=0, ycount=0, page=0, count, lcount;
 	char path[1024];
 	char index[1024];
 	char thumbindex[1024];
@@ -977,6 +1037,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 	char *tmpstr, *navstr;
 	char tmpbuf[4096];
 	Node *node;
+	struct traverse_node *travnode;
 	char space[32]="";
 	char **css=NULL, **indexheader=NULL, **indexfooter=NULL, **pictureheader=NULL, **picturefooter=NULL;
 	unsigned int css_numrows=0, indexheader_numrows=0, indexfooter_numrows=0, pictureheader_numrows=0, picturefooter_numrows=0;
@@ -1066,7 +1127,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 		{
 			if( bpict==-1 )
 			{
-				if( !CONF(local,PREFS_OUTDIR) || BCONF(local,PREFS_COPY) ) pict=&(pn->pn_original);
+				if( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) || ( !BCONF(local,PREFS_OUTDIR) && BCONF(local,PREFS_ORIGINAL) ) ) pict=&(pn->pn_original);
 				else pict=NULL;
 			}
 			else if( pn->pn_pictures )
@@ -1085,7 +1146,6 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 					tackon( path, SCONF(local,PREFS_THUMBDIR) ); /* Add the thumbnail dir */
 					tackon( path, (char *)basename( pict->p_path ) ); /* Add the name of the picture */
 					strcat( path, ".html" ); /* And stick a .html after it */
-					status( 3, local, "[1] Opening '%s'", path );
 					if( !( thumbfile=fopen( path, "w" ) ) ) goto error;
 					sprintf( path, "..%c%s", PATH_DELIMITER, indexstr( page ) );
 					if( BCONF(local,PREFS_FULLDOC) )
@@ -1177,7 +1237,11 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 					if( numpics>1 ) navbar_end( local, thumbindex );
 					if( numpics>1 ) myfprintf( thumbfile, "   <SPAN CLASS=\"navbar\">%s</SPAN><BR>\n", thumbindex );
 //					myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, (STR_ISSET(SCONF(local,PREFS_OUTDIR))&&bpict>=0?pict->p_path+strlen(SCONF(local,PREFS_OUTDIR)):pict->p_path), pict->p_width, pict->p_height, pn->pn_title );
-					myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
+					if( ICONF(local,PREFS_RELWIDTH)>0 && ( !CONF(local,PREFS_WIDTHS) || bpict==-1 ) )
+						myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d%%\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, ICONF(local,PREFS_RELWIDTH), pn->pn_title );
+					else
+						myfprintf( thumbfile, "   <A HREF=\"%s\"><IMG SRC=\"../%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\" VSPACE=\"2\" ALT=\"%s\"></A><BR>\n", path, pict->p_path, pict->p_width, pict->p_height, pn->pn_title );
+
 					if( BCONF(local,PREFS_CAPTIONS) && STR_ISSET(pn->pn_caption) ) myfprintf( thumbfile, "   <BR><SPAN CLASS=\"caption\">%s</SPAN><BR>\n", pn->pn_caption );
 #if HAVE_LIBEXIF
 					if( pn->pn_exifinfo && BCONF(local,PREFS_EXIF) )
@@ -1190,7 +1254,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 						if( STR_ISSET( ei->ei_exposure ) ) myfprintf( thumbfile, "    <TR><TH>Exposure time</TH><TD>%s</TD></TR>\n", ei->ei_exposure );
 						if( STR_ISSET( ei->ei_aperture ) ) myfprintf( thumbfile, "    <TR><TH>Aperture</TH><TD>%s</TD></TR>\n", ei->ei_aperture );
 						if( STR_ISSET( ei->ei_focal ) ) myfprintf( thumbfile, "    <TR><TH>Focal length</TH><TD>%s</TD></TR>\n", ei->ei_focal );
-						myfprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
+						if( pn->pn_loadmodule==GFXIO_JPEG ) myfprintf( thumbfile, "    <TR><TH>Flash</TH><TD>%s</TD></TR>\n", ei->ei_flash?"Yes":"No" );
 						myfprintf( thumbfile, "   </TABLE>\n" );
 					}
 #endif
@@ -1230,7 +1294,6 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			xcount=0;
 			strcpy( path, dir );
 			tackon( path, indexstr( page ) );
-			status( 3, local,  "[2] Opening '%s'", path );
 			if( !( file=fopen( path, "w" ) ) ) goto error;
 			if( BCONF(local,PREFS_FULLDOC) )
 			{
@@ -1275,6 +1338,31 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 			{
 				if( indexheader || STR_ISSET(SCONF(local,PREFS_INDEXHEADER)) ) myfprintf( file, "  </DIV>\n" );
 			}
+
+			/* Create relative dir bar (Pictures :: Animals :: Garfield) */
+			if( BCONF(local,PREFS_RECURSIVE) && BCONF(local,PREFS_DIRNAV ) )
+			{
+				lcount=0;
+				for( travnode=(struct traverse_node *)(traverse_stack.head);; travnode=(struct traverse_node *)(travnode->node.next) )
+				{
+					if( !travnode ) break;
+					lcount++;
+				}
+				fprintf( file, "<SPAN CLASS=\"dirbar\">" );
+				for( travnode=(struct traverse_node *)(traverse_stack.head);; travnode=(struct traverse_node *)(travnode->node.next) )
+				{
+					if( !travnode ) break;
+					fprintf( file, "<A HREF=\"" );
+					for( count=lcount ; count; count-- )
+					{
+						fprintf( file, "../" );
+					}
+					lcount--;
+					fprintf( file, "index.html\">%s</A> :: ", SCONF(travnode->config,PREFS_TITLE) );
+				}
+				fprintf( file, "%s</SPAN><BR>\n", SCONF(local,PREFS_TITLE) );
+			}
+
 			myfprintf( file, "  <DIV CLASS=\"thumbnails\" ALIGN=\"center\">\n" );
 			index[0]='\0';
 			if( numpages>1 || (STR_ISSET(SCONF(local,PREFS_PARENT)) && STR_ISSET(SCONF(local,PREFS_PARENTDOC))) ) navbar_new( index );
@@ -1354,7 +1442,7 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 
 			if( ICONF(local,PREFS_DEFWIDTH) && pn->pn_pictures && pn->pn_pictures[numdefault]->p_path ) pict=pn->pn_pictures[numdefault];
 			else if( pn->pn_pictures && pn->pn_pictures[0]->p_path ) pict=pn->pn_pictures[0];
-			else if( ( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) ) && pn->pn_original.p_path ) pict=&pn->pn_original;
+			else if( ( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) || ( !BCONF(local,PREFS_OUTDIR) && BCONF(local,PREFS_ORIGINAL) ) ) && pn->pn_original.p_path ) pict=&pn->pn_original;
 			else pict=NULL;
 			if( pict )
 			{
@@ -1369,9 +1457,13 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
 					myfprintf( file, "<A HREF=\"%s\">", (char *)basename( pict->p_path ) );
 				}
 			}
+			else
+			{
+				printf( "Nu är det nog nått fel\n" );
+			}
 			myfprintf( file, "<IMG ALT=\"%s\" SRC=\"%s\" WIDTH=\"%d\" HEIGHT=\"%d\" BORDER=\"0\"%s>%s%s", pn->pn_title, pn->pn_thumbnail.p_path, pn->pn_thumbnail.p_width, pn->pn_thumbnail.p_height, space, BCONF(local,PREFS_TITLES)?"<BR>":"", BCONF(local,PREFS_TITLES)?pn->pn_title:"" );
 			if( pict ) myfprintf( file, "</A>" );
-			if( (pn->pn_pictures && numscaled>1) || ( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) ) )
+			if( (pn->pn_pictures && numscaled>1) || ( ( BCONF(local,PREFS_COPY) || !SCONF(local,PREFS_OUTDIR) ) || BCONF(local,PREFS_ORIGINAL) ) )
 			{
 				myfprintf( file, "<BR><SPAN CLASS=\"sizes\">" );
 				hspace=0;
@@ -1391,7 +1483,19 @@ void gfxindex( ConfArg *local, char *dir, List *thumbs, int level )
  gfxindex -O /var/www/html/pics/paris -W1024,800 --defwidth=800 -v2
  segfaultar vid nästa rad... VARFÖR?!
  */
-						tackon( path, (char *)basename( pn->pn_pictures[bpict]->p_path ) );
+						if( pn )
+						{
+							if( pn->pn_pictures )
+							{
+								if( pn->pn_pictures[bpict] )
+								{
+									if( pn->pn_pictures[bpict]->p_path )
+									{
+										tackon( path, (char *)basename( pn->pn_pictures[bpict]->p_path ) );
+									} else fprintf( stderr, "pn->pn_pictures[bpict]->p_path==NULL\n" );
+								} else fprintf( stderr, "pn->pn_pictures[bpict]==NULL\n" );
+							} else fprintf( stderr, "pn->pn_pictures==NULL\n" );
+						} else fprintf( stderr, "pn=NULL\n" );
 						if( hspace ) myfprintf( file, " " );
 						myfprintf( file, "<A HREF=\"%s.html\">%d</A>", path, size[bpict] );
 						hspace=1;

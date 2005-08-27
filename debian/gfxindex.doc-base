@@ -1,0 +1,11 @@
+Document: gfxindex
+Title: GFXIndex manual
+Author: Fredrik Rambris <fredrik@rambris.com>
+Abstract: This manual describes what gfxindex is
+ and how it can be used.
+Section: graphics
+
+Format: HTML
+Index: /usr/share/doc/gfxindex/README.html
+
+  

@@ -1,16 +1,24 @@
 #!/bin/bash
-# My über custom buildscript. Builds a static exe (~110k)
+# My über custom buildscript. Builds a static exe (~240k)
 # I like just one exe to distribute...
+# Needs a mingw32 cross compiler suite, libxml2 libpng, jpeglib, popt, libexif, upx, zip and unix2dos
+
+# Set this where you have put your mingw32 compiler tools
+CROSSTOOLS=/usr/local/cross-tools
+
 echo "Compiling resource"
 cd src
-/usr/local/cross-tools/bin/i386-mingw32msvc-windres -Fpe-i386 resource.rc resource.o || exit
+$CROSSTOOLS/bin/i386-mingw32msvc-windres -Fpe-i386 resource.rc resource.o || exit
 cd ../
 echo "Compiling program"
-/usr/local/cross-tools/bin/i386-mingw32msvc-gcc $( cat sources.txt ) src/win32.c -I. -Isrc -Isrc/libgfx -Isrc/libtaglist -I/usr/local/cross-tools/include -I/usr/local/cross-tools/include/libexif -I/usr/local/cross-tools/include/libxml2 -I/usr/local/cross-tools/include/libpng12 -L/usr/local/cross-tools/lib  -lpopt -ljpeg -lm -lexif -liberty -lexpat -static -lpng -lz src/resource.o -o gfxindex.exe -fexpensive-optimizations -s -O3 -DSTATIC -DHAVE_CONFIG_H -DHAVE_LIBJPEG -DHAVE_LIBEXPAT -DHAVE_LIBEXIF -DHAVE_LIBPNG || exit
+$CROSSTOOLS/bin/i386-mingw32msvc-gcc $( cat sources.txt ) src/win32.c -I. -Isrc -Isrc/libgfx -Isrc/libtaglist -I$CROSSTOOLS/include -I$CROSSTOOLS/include/libexif -I$CROSSTOOLS/include/libxml2 -I$CROSSTOOLS/include/libpng12 -L$CROSSTOOLS/lib  -lpopt -ljpeg -lm -lexif -liberty -lexpat -static -lpng -lz -lwsock32 src/resource.o -o gfxindex.exe -fexpensive-optimizations -s -O3 -DSTATIC -DHAVE_CONFIG_H -DHAVE_LIBJPEG -DHAVE_LIBEXPAT -DHAVE_LIBEXIF=1 -DHAVE_LIBPNG || exit
 echo "Compressing executable"
 upx --best -q -q -q gfxindex.exe || exit
+
+# This is used to send just exe to betatesters etc.
 rm -f gfxindex-exe.zip >/dev/null 2>/dev/null
 zip -q9 gfxindex-exe.zip gfxindex.exe
+
 du -sm -h gfxindex.exe
 echo "Updating documentation"
 unix2dos -q -n COPYING COPYING.txt

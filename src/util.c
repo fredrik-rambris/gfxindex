@@ -1,6 +1,6 @@
 /* util.c - Small useful functions
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -32,6 +32,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+
+/*
+void myfree( void *ptr, int line, char *file )
+{
+	fprintf( stderr, "Freeing 0x%x at line %d in file %s\n", (unsigned int)ptr, line, file );
+	free( ptr );
+}
+*/
 
 /* Compares two strings and only returns TRUE of equal or FALSE if not */
 BOOL fastcompare( const char *a, const char *b )
@@ -654,12 +662,11 @@ void list_free( List *list, BOOL free_list )
 		free( node );
 		node=next;
 	}
+
+	list->head=NULL;
+	list->tail=NULL;
+
 	if( free_list ) free( list );
-	else
-	{
-		list->head=NULL;
-		list->tail=NULL;
-	}
 }
 
 void list_foreach( List *list, void (*callback)(Node *node) )

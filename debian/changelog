@@ -1,0 +1,14 @@
+gfxindex (2.0pre4-1) unstable; urgency=low
+
+  * Fixed libexif incompability
+  * More formats supported
+  * Added a few options
+  
+ -- Fredrik Rambris <fredrik@rambris.com>  Fri, 15 Oct 2004 22:07:00 +0200
+
+gfxindex (2.0pre3-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Fredrik Rambris <fredrik@rambris.com>  Sat, 18 Sep 2004 16:13:29 +0200
+

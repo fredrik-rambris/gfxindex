@@ -1,6 +1,6 @@
 /* util.h - Prototypes etc for util.c
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -47,6 +47,7 @@ BOOL strtobool( const char *s );
 char **Text2ArrayPtr( char *Buffer, unsigned int Length, unsigned int *NOL );
 char **readfile( const char *filename, unsigned int *numrows );
 
+void myfree( void *ptr, int line, char *file );
 /* The original one in posix doesn't check for nulls etc */
 #undef strdup
 

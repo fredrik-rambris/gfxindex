@@ -3,7 +3,6 @@
 %define rel      1
 %define prefix   /usr
 
-
 Summary: GFXIndex - Web thumbnails generator
 Name: %{name}
 Version: %{ver}
@@ -15,8 +14,8 @@ Source: http://fredrik.rambris.com/files/%{name}-%{PACKAGE_VERSION}.tar.bz2
 BuildRoot: /var/tmp/%{name}-build-root
 URL: http://fredrik.rambris.com/%{name}/
 Provides: gfxindex
-Requires: glib popt libjpeg libpng libexif expat
-BuildRequires: glib-devel popt libjpeg-devel libpng-devel libexif-devel expat-devel
+Requires: popt libjpeg libpng libexif expat
+BuildRequires: popt libjpeg-devel libpng-devel libexif-devel expat-devel
 
 %description
 GFXIndex helps you organize your pictures by creating thumbnails and indexing

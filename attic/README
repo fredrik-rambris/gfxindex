@@ -4,3 +4,18 @@ of the Linux version based on that.
 
 There are some elements left from those versions in the current source but very
 much has been rewritten and modified.
+
+Somewhere on the line the version scheme was changed. Back when I first
+created GFXIndex om my Amiga 1200 it was customary that the first version
+of a program was 1.0 and the next 1.1 and so on. But one day I changed the
+that so some versions have the same number and the whole version history
+doesn't make much sense. But just consider 1.0 to 1.6 to 0.1. The 0.2-0.4
+released is the last versions of this dual tool Linux mockup. It was then
+completly rewritten and then released as 1.0.
+
+0.x used an external thumbnailing bash script and gfxindex just created the
+HTML files
+1.x used imlib to do the image reading and GDK to do the processing and it
+was thus the first self contained version of GFXIndex. Everything was done
+by the same tool. However by using GDK it required a running X server.
+2.x now uses an intenal graphics library and nolonger requires X.

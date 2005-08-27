@@ -1,6 +1,6 @@
 /* gfxio.c - Functions for loading and saving image data
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -26,6 +26,7 @@
 #include "gfx.h"
 #include "io_jpeg.h"
 #include "io_png.h"
+#include "io_dcraw.h"
 #include <string.h>
 
 List *ios=NULL;
@@ -39,6 +40,12 @@ int gfxio_init( void )
 #ifdef HAVE_LIBPNG
 	list_append( ios, (Node *)png_init() );
 #endif
+#ifdef USE_DCRAW
+#ifdef HAVE_LIBJPEG
+	list_append( ios, (Node *)dcraw_init() );
+#endif
+#endif
+
 	return( ERR_OK );
 }
 
@@ -59,7 +66,8 @@ void gfxio_cleanup( void )
 			node=next;
 		}
 	}
-	list_free( ios, TRUE );
+	free( ios );
+//	list_free( ios, TRUE );
 	ios=NULL;
 }
 
@@ -73,7 +81,7 @@ void img_clean( struct image *img )
 
 void fe_printioinfo( Node *node )
 {
-	printf( "%s (%s)\n", ((struct imageio *)node)->io_info, ((struct imageio *)node)->io_extension );
+	printf( "%s (%s)\n", ((struct imageio *)node)->io_info, *(((struct imageio *)node)->io_extension) );
 }
 
 void printioinfo( void )
@@ -87,6 +95,8 @@ struct imageio *identify_file( FILE *file, char *filename, int *error )
 {
 	Node *node;
 	struct imageio *io=NULL;
+	BOOL found=FALSE;
+	int count;
 	if( !ios || !ios->head )
 	{
 		if( error ) *error=ERR_UNKNOWNFORMAT;
@@ -108,7 +118,16 @@ struct imageio *identify_file( FILE *file, char *filename, int *error )
 		{
 			if( filename )
 			{
-				if( fastcasecompare( filename+strlen( filename )-strlen( io->io_extension ), io->io_extension ) ) break;
+				found=FALSE;
+				for( count=0; io->io_extension[count]; count++ )
+				{
+					if( fastcasecompare( filename+strlen( filename )-strlen( io->io_extension[count] ), io->io_extension[count] ) )
+					{
+						found=TRUE;
+						break;
+					}
+				}
+				if( found ) break;
 			}
 		}
 		io=NULL;
@@ -218,6 +237,7 @@ int gfx_getinfo( char *filename, struct image *image, Tag tags, ... )
 	/* We have a possitive ID on the file */
 	if( io )
 	{
+		image->im_loadmodule=io->io_moduleid;
 		if( !io->io_load )
 		{
 			fclose( fp );

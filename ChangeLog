@@ -1,3 +1,24 @@
+Wed Feb 23 21:58:00 2005  Fredrik Rambris  <fredrik@rambris.com>
+* 
+
+Sun Feb 13 14:34:22 2005  Fredrik Rambris  <fredrik@rambris.com>
+* The flat now works for bigs too when OUTDIR is specified. No telling what
+  would happen if outdir is set to the same as indir. Don't do it.
+
+Mon Nov 15 02:40:04 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Added dirnav (Pictures :: Animals :: Garfield). Suggested by Jörg Zöllner.
+* Data from album.xml wasn't used when in recursive mode
+* Added an option to show originals or not when using WIDTHS and not OUTDIR
+
+Sat Oct 23 17:15:18 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Added support for raw photos. The dcraw sources are merged into the source.
+* Now build with both newer and older libexif
+* Static buffers were freed in gfxio_cleanup
+
+Sat Sep 18 18:19:12 2004  Fredrik Rambris  <fredrik@rambris.com>
+* Added packaging stuff for Debian. It should be possible to build deb
+  packages now.
+
 Mon Jul 19 22:22:36 2004  Fredrik Rambris  <fredrik@rambris.com>
 * Jörg Zöllner <joerg.z.77@gmx.net> reported that directory traversing didn't
   work past one level down. That should be fixed now.

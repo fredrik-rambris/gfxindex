@@ -1,6 +1,6 @@
 /*
- * GFXIndex (c) 1999 Fredrik Rambris. All rights reserved. Use as you like as
- * long as you give me credits for my work.
+ * GFXIndex (c) 1999 Fredrik Rambris. All rights reserved.
+ * Released under the GNU General Public License. See COPYING for details.
  *
  * GFXIndex is a tool that creates HTML-indices of our images. Use with
  * supplied 'makethumbs' script.

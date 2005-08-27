@@ -1,0 +1,15 @@
+Source: gfxindex
+Section: graphics
+Priority: optional
+Maintainer: Fredrik Rambris <fredrik@rambris.com>
+Build-Depends: debhelper (>= 4.0.0), libjpeg62-dev, libpng12-dev, libexif-dev, libpopt-dev, libexpat1-dev, pkg-config
+Standards-Version: 3.6.0
+
+Package: gfxindex
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libjpeg62, libpng12, libexif10, libpopt0, libexpat1
+Description: Web thumbnail and index generator
+ GFXIndex helps you organize your pictures by creating thumbnails and indexing
+ them in HTML-indexes. This allows you to put the entire thing directly on the
+ web, on a CD or whereever you want as long as it can be reached with a
+ web browser.

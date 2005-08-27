@@ -2,9 +2,9 @@
 #include <config.h>
 #endif
 
-#if HAVE_LIBEXIF
 
 #include "exif.h"
+#ifdef HAVE_LIBEXIF
 #include <libexif/exif-data.h>
 #include <libexif/exif-utils.h>
 #include <libexif/exif-tag.h>
@@ -30,10 +30,17 @@ ExifEntry *get_exif_entry( ExifData *ed, ExifTag t )
 
 const char *get_exif_value(ExifData *ed, ExifTag t)
 {
+#if HAVE_LIBEXIF == 10
+	static char buf[1024*16];
+#endif
 	ExifEntry *e;
 	if( ( e=get_exif_entry( ed, t ) ) )
 	{
+#if HAVE_LIBEXIF == 10
+		return exif_entry_get_value( e, (char *)buf, (unsigned int)(1024*16)-1 );
+#else
 		return exif_entry_get_value( e );
+#endif
 	}
 	return NULL;
 }
@@ -63,9 +70,11 @@ int get_exif_flash( ExifData *ed )
     return 0;
 }
 
+#endif
 ExifInfo *gfx_exif_file( char *file )
 {
 	ExifInfo *ei=NULL;
+#ifdef HAVE_LIBEXIF
 	ExifData *ed;
 	if( !STR_ISSET(file) ) return ei;
 	if( ( ed=exif_data_new_from_file( file ) ) )
@@ -89,6 +98,7 @@ ExifInfo *gfx_exif_file( char *file )
 		}
 		exif_data_unref (ed);
 	}
+#endif
 	return ei;
 }
 
@@ -107,4 +117,3 @@ void gfx_exif_free( ExifInfo *ei, BOOL free_ei )
 	}
 }
 
-#endif

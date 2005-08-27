@@ -1,6 +1,5 @@
 #ifndef EXIF_H
 #define EXIF_H
-#if HAVE_LIBEXIF
 #include <stdio.h>
 #include "util.h"
 
@@ -19,6 +18,5 @@ typedef struct _ExifInfo
 ExifInfo *gfx_exif_file( char *file );
 void gfx_exif_free( ExifInfo *ei, BOOL free_ei );
 
-#endif
 #endif
 

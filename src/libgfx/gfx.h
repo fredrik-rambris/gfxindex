@@ -1,6 +1,6 @@
 /* gfx.h - Definitions and prototypes for gfx library
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -67,6 +67,7 @@ struct image
 //	unsigned char *im_alpha; /* 1 byte per pixel. 0=transparent, 255=opaque */
 	int im_width;
 	int im_height;
+	unsigned int im_loadmodule; /* The IO model used to load the image */
 };
 
 struct color

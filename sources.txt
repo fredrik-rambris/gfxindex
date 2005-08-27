@@ -5,6 +5,8 @@ src/libgfx/gfx.c
 src/libgfx/gfxio.c
 src/libgfx/io_jpeg.c
 src/libgfx/io_png.c
+src/libgfx/io_dcraw.c
+src/libgfx/libdcraw.c
 src/util.c
 src/confargs.c
 src/preferences.c

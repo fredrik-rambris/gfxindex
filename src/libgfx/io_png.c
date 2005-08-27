@@ -2,7 +2,7 @@
  * Haven't implemented it totally yet. Please contribute if you want PNG
  * support.
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -57,16 +57,23 @@ static int gfx_png_error( int ret, struct image *img, png_structp png_ptr, png_i
 	return( ret );
 }
 
+const char *png_extensions[]=
+{
+	"png",
+	NULL
+};
+
 static struct imageio iio=
 {
 	{ NULL, NULL },
+	GFXIO_PNG,
 	png_identify,
 	png_load,
 	NULL, //	png_save,
 	png_getinfo,
 	NULL,
 	"io_png v0.1 by Fredrik Rambris.",
-	"png"
+	png_extensions
 };
 
 struct imageio *png_init( void )

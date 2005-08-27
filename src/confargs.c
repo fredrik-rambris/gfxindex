@@ -1,5 +1,5 @@
 /* confargs.c - Argument and config handling
- * ConfArgs (c) 2000-2003 Fredrik Rambris <fredrik@rambris.com>
+ * ConfArgs (c) 2000-2004 Fredrik Rambris <fredrik@rambris.com>
  *
  * ConfArgs is a set of functions for minimizing the effort to handle options
  * from command line as well as from config files.
@@ -47,7 +47,7 @@ ConfArg *confargs_new( const ConfArgItem *ca_items, void (*sanity_check)( ConfAr
 		{
 			case CT_ARG_BOOL:
 			case CT_ARG_INT:
-				(int)(ca->ca_values[number])=(int)(ca->ca_items[number].ci_default);
+				(ca->ca_values[number])=(void *)(ca->ca_items[number].ci_default);
 				break;
 			case CT_ARG_STR:
 				if( ca->ca_items[number].ci_default ) ca->ca_values[number]=strdup( (char *)ca->ca_items[number].ci_default );

@@ -1,6 +1,6 @@
 /* gfxio.h - Definitions and functions for the I/O part of gfx library
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -35,6 +35,8 @@
 struct imageio
 {
 	Node node;
+	/* An unique integer module identification */
+	unsigned int io_moduleid;
 	/* Function used to identify a file and if this library can handle it */
 	BOOL (*io_identify) ( FILE *file );
 	/* Function to load image, allocate an image struct and point img to it */
@@ -46,11 +48,9 @@ struct imageio
 	/* Frees any allocated stuff. Also the imageio-struct if it was manually allocated */
 	void (*io_cleanup) ( void );
 	/* Information (read only) about the library */
-	char *io_info;
+	const char *io_info;
 	/* Default extension to filenames */
-	char *io_extension;
-	/* Identification (used when selecting format in UIs etc ) */
-	char *io_id;
+	const char **io_extension;
 };
 
 extern List *ios;

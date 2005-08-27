@@ -1,6 +1,6 @@
 /* defaults.c - Hardcoded defaults. 
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -70,8 +70,16 @@
 	#define DEFAULT_DEFWIDTH 0
 #endif
 
+#ifndef DEFAULT_RELWIDTH
+	#define DEFAULT_RELWIDTH 0
+#endif
+
 #ifndef DEFAULT_COPY
 	#define DEFAULT_COPY FALSE
+#endif
+
+#ifndef DEFAULT_ORIGINAL
+	#define DEFAULT_ORIGINAL FALSE
 #endif
 
 #ifndef DEFAULT_BIGQUALITY
@@ -164,6 +172,10 @@
 
 #ifndef DEFAULT_THUMBSCALE
 	#define DEFAULT_THUMBSCALE 0
+#endif
+
+#ifndef DEFAULT_DIRNAV
+	#define DEFAULT_DIRNAV TRUE
 #endif
 
 #ifndef DEFAULT_XSTOP

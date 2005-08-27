@@ -1,0 +1,1 @@
+shlibs:Depends=libc6 (>= 2.3.2.ds1-4), libexif10, libexpat1 (>= 1.95.6), libjpeg62, libpng12-0 (>= 1.2.5.0-4), libpopt0 (>= 1.7)

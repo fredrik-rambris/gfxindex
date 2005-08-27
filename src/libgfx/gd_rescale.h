@@ -1,3 +1,4 @@
+#undef floor
 double floor( double x )
 {
 	long i=x;

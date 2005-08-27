@@ -3,7 +3,6 @@
 #endif
 
 char *utf8toiso( char *str );
-#ifdef HAVE_LIBEXPAT
 
 #include <string.h>
 #include <stdio.h>
@@ -11,6 +10,7 @@ char *utf8toiso( char *str );
 #include "preferences.h"
 #include "util.h"
 #include "xml.h"
+#ifdef HAVE_LIBEXPAT
 #include <expat.h>
 
 /*
@@ -287,11 +287,11 @@ static void end_element(void *userData, const char *name)
 			rs->pn=NULL;
 			break;
 		case E_A_TITLE:
-			SCONF(rs->cfg,PREFS_TITLE)=setstr( SCONF(rs->cfg,PREFS_TITLE), utf8toiso(rs->buf) );
+			CONF(rs->cfg,PREFS_TITLE)=setstr( SCONF(rs->cfg,PREFS_TITLE), utf8toiso(rs->buf) );
 			rs->collectall=FALSE;
 			break;
 		case E_A_CAPTION:
-			SCONF(rs->cfg,PREFS_CAPTION)=setstr( SCONF(rs->cfg,PREFS_CAPTION), utf8toiso(rs->buf) );
+			CONF(rs->cfg,PREFS_CAPTION)=setstr( SCONF(rs->cfg,PREFS_CAPTION), utf8toiso(rs->buf) );
 			rs->collectall=FALSE;
 			break;
 		case E_P_TITLE:
@@ -368,9 +368,13 @@ List *readAlbum( char *file, ConfArg *cfg )
 	}
 	return NULL;
 }
-
+#else
+List *readAlbum( char *file, ConfArg *cfg )
+{
+	return NULL;
+}
 #endif
-/* These functions doesn't use libexpat */
+/* These functions don't use libexpat */
 
 void writeThumbData( ConfArg *cfg, List *thumbdata, char *file )
 {

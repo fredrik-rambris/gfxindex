@@ -1,6 +1,6 @@
 /* io_png.h - Definitions and prototypes for PNG-I/O
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -31,13 +31,13 @@
  #endif
 #endif
 
+#define GFXIO_PNG		(GFXIO+200)
+
 #ifdef HAVE_LIBPNG
 
 #include "gfxio.h"
 
 struct imageio *png_init( void );
-
-#define GFXIO_PNG		(GFXIO+200)
 
 #endif
 

@@ -17,10 +17,11 @@
    SPAN.type { color: #0088ff; font-weight: bold }
    SPAN.logo { font-size: 18pt; font-weight: bold; font-family: Trebuchet MS }
    SPAN.experimental { color: #ff0000 }
+   TD.gargol { background-image: url( "gargol-avatar.jpg" ); background-position: 100% 100%; background-repeat: no-repeat }
   --></STYLE>
  </HEAD>
  <BODY>
-  <TABLE BORDER="0" CELLPADDING="8" CELLSPACING="0" WIDTH="100%"><TR><TD BGCOLOR="#000000">&nbsp;</TD><TD VALIGN="top" WIDTH="600">
+  <TABLE BORDER="0" CELLPADDING="8" CELLSPACING="0" WIDTH="100%"><TR><TD BGCOLOR="#000000">&nbsp;</TD><TD VALIGN="top" WIDTH="600" CLASS="gargol">
   <SPAN CLASS="logo">GFXIndex</SPAN> - Thumbnailer and indexer<BR>
   <HR NOSHADE SIZE="1">
   <P></P>
@@ -87,13 +88,13 @@
   <H3>Usage</H3>
   The most common usage is to run GFXIndex within the directory you wish to make HTML indexes.
   <P></P>
-  On Windows you can right click on a folder and select Create album with GFXIndex. It uses the settings from <EM>gfxindex.ini</EM> in the installation folder.
+  On Windows you can right click on a folder and select <EM>Create album with GFXIndex</EM>. It uses the settings from <EM>gfxindex.ini</EM> in the installation folder.
   <P></P>
   Arguments can be entered on the commandline or be read in from a runcontrol file. The path of this file caused some confusion in past versions. Nowdays the config is read once and the path has to be specified in command line.  <P></P>
   <P></P>
   The options are pretty self expanatory but I'll go ahead and explain them anyway.
   <P></P>
-  For the commandline options see <CODE>gfxindex --help</CODE>. This is the format of a rcfile. Although in pretty much all the cases you can use the same option names on the command line as in rcfiles.
+  For the commandline options see <CODE>gfxindex --help</CODE>. This document describes the format of a rcfile. Although in pretty much all the cases you can use the same option names on the command line as in rcfiles.
   <P></P>
   A rcfile is a regular text file. You may comment out the rest of the line with //. Each line consists of an option and a value separated by a '='. The formating is pretty liberal. After cutting the line by the first '=', whitespaces are stripped off. All chars are allowed except newline or carrige return.
   <P></P>
@@ -175,6 +176,9 @@
    <DT><SPAN CLASS="name">COPY</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
    <DD>Whether the original image should be copied to the OUTDIR or not. This can be used if you have large originals that you don't want to share but rather let the viewer have smaller images (created with WIDTHS). Or if you DO want to share the original when using a separate OUTDIR.</DD>
    <P></P>
+   <DT><SPAN CLASS="name">ORIGINAL</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>If we should show the original images when using WIDTHS and not OUTDIR or COPY.</DD>
+   <P></P>
    <DT><SPAN CLASS="name">QUALITY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Sets the JPEG quality for the thumbnails. 0 means poor and 100 means best quality and vice versa with the compression ratio / file size. A value between 50-80 makes sense with thumbnails.</DD>
    <P></P>
@@ -221,6 +225,9 @@
    <DT><IMG SRC="thumbs.gif" WIDTH="256" HEIGHT="97" ALIGN="right"><SPAN CLASS="name">NAVTHUMBS</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Use thumbnails for Prev and Next when viewing an image. Supply a percentage of the original thumbnail size it will have.<BR><B>100</B> sets the sizes of these thumbnails to the same as the other thumbnails, <B>50</B> half, etc.<BR>
    Set this to <B>0</B> and it will turn this feature off (default).<BR>Note. This used to be called THUMBSCALE</DD>
+   <P></P>
+   <DT><SPAN CLASS="name">DIRNAV</SPAN> (<SPAN CLASS="type">BOOL</SPAN>)</DT>
+   <DD>Provide links to parent dirs when in recursive mode.&nbsp;&nbsp;&nbsp;<U><FONT COLOR="#0000ff">My pictures</FONT></U> :: <U><FONT COLOR="#0000ff">Animals</FONT></U> :: Garfield</DD>
    <P></P>
    <DT><SPAN CLASS="name">NUMX</SPAN> &amp; <SPAN CLASS="name">NUMY</SPAN> (<SPAN CLASS="type">INTEGER</SPAN>)</DT>
    <DD>Number of thumbnails per row and rows per page.<BR>
@@ -369,7 +376,7 @@
   </UL>
   <P></P>
   <HR NOSHADE SIZE="1">
-  <SMALL>Updated for 2.0pre3. 2004-Jul-19</SMALL>
+  <SMALL>Updated for 2.0. 2004-Nov-17</SMALL>
   </TD><TD BGCOLOR="#000000">&nbsp;</TD></TR></TABLE>
  </BODY>
 </HTML>

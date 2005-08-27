@@ -4,7 +4,7 @@ About GFXIndex.c
 This is the last version of GFXIndex I made on Amiga before moving to Linux
 and x86 boxes. It relies on gfxcon (http://www.aminet.net/gfx/conv/gfxcon.lha)
 to create the thumbnails (it's run from within gfxindex) and it must be called
-c:gfxcon or change the source and recompile. I doesn't have a GUI nor is
+c:gfxcon or change the source and recompile. It doesn't have a GUI nor is
 startable from Workbench.
 
 It has a different version scheme than we have today. In those days it was

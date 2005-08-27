@@ -1,5 +1,5 @@
 /* thumbdata.h - Definitions of the thumbnail data structures.
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -38,6 +38,7 @@ struct Picture
 struct PictureNode
 {
 	Node node;
+	unsigned int pn_loadmodule; /* The IO module used to load the image */
 	BOOL pn_skip;
 	int pn_rotate; /* Degrees of rotation 0, 90, 180, 270 */
 	char *pn_title, *pn_caption; /* If not in exif then here */
@@ -45,9 +46,7 @@ struct PictureNode
 	struct Picture **pn_pictures; /* An null terminated array of Picture's */
 	struct Picture pn_thumbnail;
 	char *pn_dir; /* If it's a dir then this is the name */
-#if HAVE_LIBEXIF
 	ExifInfo *pn_exifinfo;
-#endif
 };
 
 List *thumbdata_new( List *list );

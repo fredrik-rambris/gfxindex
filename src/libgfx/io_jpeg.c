@@ -1,6 +1,6 @@
 /* io_jpeg.c - Functions for loading and saving JPEG files
  *
- * GFXIndex (c) 1999-2003 Fredrik Rambris <fredrik@rambris.com>.
+ * GFXIndex (c) 1999-2004 Fredrik Rambris <fredrik@rambris.com>.
  * All rights reserved.
  *
  * GFXIndex is a tool that creates thumbnails and HTML-indexes of your images. 
@@ -71,16 +71,24 @@ int jpeg_error( int ret, struct image *img, void *cinfo, unsigned char *pixels )
 
 /*******************************/
 
+const char *jpeg_extensions[]=
+{
+	"jpg",
+	"jpeg",
+	NULL
+};
+
 static struct imageio iio=
 {
 	{ NULL, NULL },
+	GFXIO_JPEG,
 	jpeg_identify,
 	jpeg_load,
 	jpeg_save,
 	jpeg_getinfo,
 	NULL,
 	"io_jpeg v0.2 by Fredrik Rambris.",
-	"jpg"
+	jpeg_extensions
 };
 
 struct imageio *jpeg_init( void )
